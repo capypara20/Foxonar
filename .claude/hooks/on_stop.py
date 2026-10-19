@@ -2,7 +2,7 @@
 
 コミットしていない文書の変更があるときだけ、次の 2 つを確かめる。
 1. 突き合わせでエラーが無いか（Bash で書き換えた分も、ここで拾う）
-2. 作業メモ（.claude/notes.md）が、文書の変更より新しいか
+2. 作業メモが、文書の変更より新しいか（docs/ は notes.md、AGENTS.md・CLAUDE.md は notes-ai.md と比べる）
 
 どちらかに引っかかったら終了コード 2 で止め、Claude にもう一度だけ動いてもらう。
 同じ理由で何度も止めないように、知らせた内容を .claude/state/ に覚えておく。
@@ -15,6 +15,9 @@ import sys
 
 from _common import (
     NOTES,
+    NOTES_AI,
+    ROOT,
+    WATCHED_FILES,
     changed_doc_files,
     load_state,
     read_input,
@@ -49,16 +52,26 @@ def main() -> int:
     else:
         state.pop("last_error_digest", None)
 
-    latest_doc = max(p.stat().st_mtime for p in changed)
-    notes_time = NOTES.stat().st_mtime if NOTES.exists() else 0.0
-    if notes_time < latest_doc and state.get("notes_nudged_for", 0.0) < latest_doc:
-        state["notes_nudged_for"] = latest_doc
-        names = "、".join(sorted(p.relative_to(NOTES.parents[1]).as_posix() for p in changed))
-        reasons.append(
-            f"作業メモ（.claude/notes.md）が、文書の変更（{names}）より古いです。"
-            "決まったことがあれば save-notes スキルで書き足してください。"
-            "言い回しの直しだけなら、更新は要りません（そのまま終わってよい）。"
-        )
+    # 設計の文書（docs/）は notes.md と、AI の基盤の説明書（AGENTS.md・CLAUDE.md）は notes-ai.md と比べる
+    ai_names = {name.lower() for name in WATCHED_FILES}
+    pairs = [
+        (NOTES, [p for p in changed if p.name.lower() not in ai_names]),
+        (NOTES_AI, [p for p in changed if p.name.lower() in ai_names]),
+    ]
+    for notes, files in pairs:
+        if not files:
+            continue
+        latest_doc = max(p.stat().st_mtime for p in files)
+        notes_time = notes.stat().st_mtime if notes.exists() else 0.0
+        key = f"notes_nudged_for:{notes.name}"
+        if notes_time < latest_doc and state.get(key, 0.0) < latest_doc:
+            state[key] = latest_doc
+            names = "、".join(sorted(p.relative_to(ROOT).as_posix() for p in files))
+            reasons.append(
+                f"作業メモ（.claude/{notes.name}）が、文書の変更（{names}）より古いです。"
+                "決まったことがあれば save-notes スキルで書き足してください。"
+                "言い回しの直しだけなら、更新は要りません（そのまま終わってよい）。"
+            )
 
     save_state(state)
     if not reasons:

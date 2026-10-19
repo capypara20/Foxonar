@@ -25,7 +25,7 @@ flowchart BT
   end
   subgraph loop["3. ループ：自分で回るしくみ"]
     hooks["フック<br>自動で確かめる"]
-    notes["notes.md<br>状態ファイル"]
+    notes["notes.md / notes-ai.md<br>状態ファイル（設計 / AI の基盤）"]
   end
   base --> tools --> loop
 ```
@@ -34,7 +34,7 @@ flowchart BT
 
 ```mermaid
 flowchart TD
-  start(["会話の始まり"]) --> ss["SessionStart フック<br>notes.md の「まだやっていないこと」を読み込む"]
+  start(["会話の始まり"]) --> ss["SessionStart フック<br>notes.md と notes-ai.md の「まだやっていないこと」を読み込む"]
   ss --> work["Claude が作業する"]
   work --> edit{"docs/ や AGENTS.md を<br>書き換えた？"}
   edit -- はい --> post["PostToolUse フック<br>doc_check.py を走らせる"]
@@ -59,13 +59,14 @@ flowchart TD
 | AGENTS.md | [../AGENTS.md](../AGENTS.md) | AI 共通の説明書。Copilot や Codex も読める |
 | CLAUDE.md | [../CLAUDE.md](../CLAUDE.md) | `@AGENTS.md` で本体を読み込み、Claude だけのしくみを足す |
 | 突き合わせスクリプト | [../scripts/doc_check.py](../scripts/doc_check.py) | 機械で分かるずれを見つける。**合格の基準** |
-| スキル doc-check | [skills/doc-check/SKILL.md](skills/doc-check/SKILL.md) | スクリプト＋エージェント 2 人で文書を突き合わせる手順 |
+| スキル doc-check | [skills/doc-check/SKILL.md](skills/doc-check/SKILL.md) | スクリプト＋エージェント 2 人で文書を突き合わせる手順。ふだんは前回からの差分だけを調べる。報告は `.claude/state/doc-check/` に残る |
 | スキル save-notes | [skills/save-notes/SKILL.md](skills/save-notes/SKILL.md) | 作業メモの書き方 |
 | スキル commit | [skills/commit/SKILL.md](skills/commit/SKILL.md) | Roze の形式でコミットする手順。形式は `check_msg.py` で確かめる |
 | エージェント term-guardian | [agents/term-guardian.md](agents/term-guardian.md) | 用語の番人（読むだけ） |
 | エージェント design-verifier | [agents/design-verifier.md](agents/design-verifier.md) | 設計の検証役（読むだけ）。書いた本人とは別の目 |
 | フック | [settings.json](settings.json)、[hooks/](hooks/) | 上の図のとおり自動で動く |
-| 作業メモ | [notes.md](notes.md) | 状態ファイル。会話が要約されても続きができる |
+| 作業メモ | [notes.md](notes.md) | 状態ファイル。会話が要約されても続きができる。設計の話だけ（main に入る） |
+| 作業メモ（AI の基盤） | [notes-ai.md](notes-ai.md) | このしくみ自体の話（ai-loop ブランチにだけ入る） |
 
 ## 使い方
 
@@ -73,7 +74,7 @@ Claude Code の入力欄で、スラッシュに続けてスキルの名前を�
 
 | 打つもの | 普通の言葉の例 | 何が起きるか |
 |---|---|---|
-| `/doc-check` | 「矛盾はない？」 | スクリプト → エージェント 2 人 → 裏取り → 報告 |
+| `/doc-check` | 「矛盾はない？」 | スクリプト → エージェント 2 人 → 報告を保存 → 裏取り → 報告（判断が要るものは、具体例つきで 4 問ずつ聞く） |
 | `/save-notes` | 「ここまでをメモして」 | notes.md に書き足し、「まだやっていないこと」を直す |
 | `/commit` | 「コミットして」 | メッセージを作り、形式を確かめ、Roze の OK のあとでコミット |
 
@@ -107,5 +108,5 @@ python scripts/doc_check.py --todo
 
 - フックは Python で書いている。Linux で `python` が無い（`python3` しか無い）ときは、`settings.json` の `python` を `python3` に変える
 - フックを一時的に止めたいときは、`.claude/settings.local.json` に `{"disableAllHooks": true}` と書く（このファイルは git に入らない）
-- フックの覚え書き（同じ注意を繰り返さないため）は `.claude/state/` にある。git には入らない
+- フックの覚え書き（同じ注意を繰り返さないため）と、doc-check のエージェントの報告は `.claude/state/` にある。git には入らない
 - `.claude/README.md`（このファイル）は、書き換えても PostToolUse フックの対象ではない（リンク切れは `doc_check.py` で分かる）

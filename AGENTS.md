@@ -16,9 +16,10 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 |---|---|
 | [docs/glossary.ja.md](docs/glossary.ja.md) | 用語集（**正本**）。言葉の意味だけ |
 | [docs/glossary.md](docs/glossary.md) | 用語集の英訳。仕様が固まるまで更新しない |
-| [docs/decisions.ja.md](docs/decisions.ja.md) | 議論の記録（論点 A〜U）。何を、なぜ決めたか |
+| [docs/decisions.ja.md](docs/decisions.ja.md) | 議論の記録（論点 A〜V）。何を、なぜ決めたか |
 | [docs/design.ja.md](docs/design.ja.md) | 設計書。どうやるか。章ごとに「決まったこと」と「決めること」 |
 | [.claude/notes.md](.claude/notes.md) | 作業メモ。会話の要点と「まだやっていないこと」。セッションをまたぐ記憶 |
+| [.claude/notes-ai.md](.claude/notes-ai.md) | AI の基盤（この説明書、スキル、エージェント、フック、`scripts/`）の作業メモ。ai-loop ブランチにだけ入れる |
 | [scripts/doc_check.py](scripts/doc_check.py) | 文書の突き合わせスクリプト（下の「確かめ方」） |
 | `assets/` | プログラムが使う素材（アイコンなど） |
 
@@ -31,7 +32,7 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 5. 用語集の表は、上ほど小さい概念。定義には、それより上で定義した言葉だけを使う。
 6. 3 つの文書の役割を混ぜない：意味は用語集、理由は議論の記録、やり方は設計書。
 7. 英訳（`docs/glossary.md` など）は、仕様が固まるまで作らない・直さない。
-8. 作業の区切りで、[.claude/notes.md](.claude/notes.md) に決まったことと「まだやっていないこと」を書き足す。
+8. 作業の区切りで、[.claude/notes.md](.claude/notes.md) に決まったことと「まだやっていないこと」を書き足す。AI の基盤の話は [.claude/notes-ai.md](.claude/notes-ai.md) に書く（main と混ぜないため）。
 9. `git push` は、Roze が頼んだときだけ。
 
 ## 確かめ方
