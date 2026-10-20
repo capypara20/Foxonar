@@ -19,7 +19,7 @@ flowchart BT
     docs["docs/<br>用語集・議論の記録・設計書"]
   end
   subgraph tools["2. 道具：手順とチェック役"]
-    skills["スキル<br>doc-check / save-notes / commit"]
+    skills["スキル<br>grill / doc-check / save-notes / commit"]
     subagents["エージェント<br>term-guardian / design-verifier"]
     script["scripts/doc_check.py<br>合格の基準"]
   end
@@ -59,6 +59,7 @@ flowchart TD
 | AGENTS.md | [../AGENTS.md](../AGENTS.md) | AI 共通の説明書。Copilot や Codex も読める |
 | CLAUDE.md | [../CLAUDE.md](../CLAUDE.md) | `@AGENTS.md` で本体を読み込み、Claude だけのしくみを足す |
 | 突き合わせスクリプト | [../scripts/doc_check.py](../scripts/doc_check.py) | 機械で分かるずれを見つける。**合格の基準** |
+| スキル grill | [skills/grill/SKILL.md](skills/grill/SKILL.md) | 設計を詰める手順。宿題一覧を前提の「木」にし、今聞ける問いだけを具体例とおすすめつきで聞く。もとは mattpocock/skills の grilling |
 | スキル doc-check | [skills/doc-check/SKILL.md](skills/doc-check/SKILL.md) | スクリプト＋エージェント 2 人で文書を突き合わせる手順。ふだんは前回からの差分だけを調べる。報告は `.claude/state/doc-check/` に残る |
 | スキル save-notes | [skills/save-notes/SKILL.md](skills/save-notes/SKILL.md) | 作業メモの書き方 |
 | スキル commit | [skills/commit/SKILL.md](skills/commit/SKILL.md) | Roze の形式でコミットする手順。形式は `check_msg.py` で確かめる |
@@ -74,6 +75,7 @@ Claude Code の入力欄で、スラッシュに続けてスキルの名前を�
 
 | 打つもの | 普通の言葉の例 | 何が起きるか |
 |---|---|---|
+| `/grill` | 「設計を詰めたい」「次を決めよう」 | 決めることの木を作り、聞ける問いから 4 問ずつ聞く → 決まったら設計書などへすぐ書く → 具体例で試す |
 | `/doc-check` | 「矛盾はない？」 | スクリプト → エージェント 2 人 → 報告を保存 → 裏取り → 報告（判断が要るものは、具体例つきで 4 問ずつ聞く） |
 | `/save-notes` | 「ここまでをメモして」 | notes.md に書き足し、「まだやっていないこと」を直す |
 | `/commit` | 「コミットして」 | メッセージを作り、形式を確かめ、Roze の OK のあとでコミット |
