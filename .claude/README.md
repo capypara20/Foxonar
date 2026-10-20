@@ -66,8 +66,8 @@ flowchart TD
 | エージェント term-guardian | [agents/term-guardian.md](agents/term-guardian.md) | 用語の番人（読むだけ） |
 | エージェント design-verifier | [agents/design-verifier.md](agents/design-verifier.md) | 設計の検証役（読むだけ）。書いた本人とは別の目 |
 | フック | [settings.json](settings.json)、[hooks/](hooks/) | 上の図のとおり自動で動く |
-| 作業メモ | [notes.md](notes.md) | 状態ファイル。会話が要約されても続きができる。設計の話だけ（main に入る） |
-| 作業メモ（AI の基盤） | [notes-ai.md](notes-ai.md) | このしくみ自体の話（ai-loop ブランチにだけ入る） |
+| 作業メモ | [notes.md](notes.md) | 状態ファイル。会話が要約されても続きができる。設計の話だけ |
+| 作業メモ（AI の基盤） | [notes-ai.md](notes-ai.md) | このしくみ自体の話 |
 
 ## 使い方
 

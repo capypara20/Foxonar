@@ -16,10 +16,11 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 |---|---|
 | [docs/glossary.ja.md](docs/glossary.ja.md) | 用語集（**正本**）。言葉の意味だけ |
 | [docs/glossary.md](docs/glossary.md) | 用語集の英訳。仕様が固まるまで更新しない |
-| [docs/decisions.ja.md](docs/decisions.ja.md) | 議論の記録（論点 A〜V）。何を、なぜ決めたか |
-| [docs/design.ja.md](docs/design.ja.md) | 設計書。どうやるか。章ごとに「決まったこと」と「決めること」 |
+| [docs/decisions.ja.md](docs/decisions.ja.md) | 議論の記録（論点）。何を、なぜ決めたか |
+| [docs/design.ja.md](docs/design.ja.md) | 設計書。決まった「どうやるか」だけ。章の中は 1.1 のような小番号で区切る |
+| [docs/todo.ja.md](docs/todo.ja.md) | 宿題一覧。まだ決めていないことと、その案。設計書と同じ章立て |
 | [.claude/notes.md](.claude/notes.md) | 作業メモ。会話の要点と「まだやっていないこと」。セッションをまたぐ記憶 |
-| [.claude/notes-ai.md](.claude/notes-ai.md) | AI の基盤（この説明書、スキル、エージェント、フック、`scripts/`）の作業メモ。ai-loop ブランチにだけ入れる |
+| [.claude/notes-ai.md](.claude/notes-ai.md) | AI の基盤（この説明書、スキル、エージェント、フック、`scripts/`）の作業メモ。設計の話（notes.md）とは分けて書く |
 | [scripts/doc_check.py](scripts/doc_check.py) | 文書の突き合わせスクリプト（下の「確かめ方」） |
 | `assets/` | プログラムが使う素材（アイコンなど） |
 
@@ -27,12 +28,12 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 
 1. **決めるのは Roze。** AI は案を出す。Roze が決めてから、文書に決定として書く。決まっていないものは「案」と書く。
 2. **頼まれたら、まず不明な点を Roze に一度確かめてから**始める。
-3. **言葉は用語集の意味で使う。** 用語集の「使い方」と「4. 言い方の決まり」に従う（例：OS イベントは「受け取る」、変化は「検知する」、通知は「流す」。「イベント」単独や「ルール」は使わない）。
+3. **言葉は用語集の意味で使う。** 用語集の「使い方」と「言い方の決まり」に従う（例：OS イベントは「受け取る」、変化は「検知する」、通知は「流す」。「イベント」単独や「ルール」は使わない）。
 4. **新しい言葉を足す・言葉を変えるときは、議論の記録に論点を立て、決まってから用語集に書く。** 用語集を直接書き換えない。
 5. 用語集の表は、上ほど小さい概念。定義には、それより上で定義した言葉だけを使う。
-6. 3 つの文書の役割を混ぜない：意味は用語集、理由は議論の記録、やり方は設計書。
+6. 4 つの文書の役割を混ぜない：意味は用語集、理由は議論の記録、決まったやり方は設計書、まだ決めていないことと案は宿題一覧。設計書には「決めること」や「案」を書かない（突き合わせが警告する）。決まったら設計書へ書き、宿題一覧から消す。
 7. 英訳（`docs/glossary.md` など）は、仕様が固まるまで作らない・直さない。
-8. 作業の区切りで、[.claude/notes.md](.claude/notes.md) に決まったことと「まだやっていないこと」を書き足す。AI の基盤の話は [.claude/notes-ai.md](.claude/notes-ai.md) に書く（main と混ぜないため）。
+8. 作業の区切りで、[.claude/notes.md](.claude/notes.md) に決まったことと「まだやっていないこと」を書き足す。AI の基盤の話は [.claude/notes-ai.md](.claude/notes-ai.md) に書く（設計の話と混ぜないため）。
 9. `git push` は、Roze が頼んだときだけ。
 
 ## 確かめ方
@@ -41,7 +42,7 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 
 ```bash
 python scripts/doc_check.py          # 突き合わせ（エラーがあると終了コード 1）
-python scripts/doc_check.py --todo   # 設計書の「決めること」の一覧も出す
+python scripts/doc_check.py --todo   # 宿題一覧の「決めること」の一覧も出す
 ```
 
 調べるもの：リンク切れ、無い論点への参照、閉じていないコードブロック、用語集の並び順の決まり、使わない言葉（機械で分かるものだけ）。意味のずれは、人かエージェントが読んで調べる。

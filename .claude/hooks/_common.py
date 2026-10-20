@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
 DOC_CHECK = ROOT / "scripts" / "doc_check.py"
 NOTES = ROOT / ".claude" / "notes.md"
-# AI の基盤の話だけを書く作業メモ。ai-loop ブランチにだけ入れ、main の notes.md と混ぜないために分けた
+# AI の基盤の話だけを書く作業メモ。設計の話を書く notes.md と混ぜないために分けた
 NOTES_AI = ROOT / ".claude" / "notes-ai.md"
 STATE = ROOT / ".claude" / "state" / "hook_state.json"
 

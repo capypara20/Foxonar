@@ -27,6 +27,7 @@ GLOSSARY_JA = DOCS / "glossary.ja.md"
 GLOSSARY_EN = DOCS / "glossary.md"
 DECISIONS = DOCS / "decisions.ja.md"
 DESIGN = DOCS / "design.ja.md"
+TODO = DOCS / "todo.ja.md"
 NOTES = ROOT / ".claude" / "notes.md"
 
 # 相対リンクの行き先を確かめるファイル
@@ -37,9 +38,9 @@ LINK_FILES = [
     ROOT / ".claude" / "README.md",
 ]
 # 「論点 X」の参照先を確かめるファイル
-REF_FILES = [GLOSSARY_JA, DECISIONS, DESIGN, NOTES, ROOT / "AGENTS.md"]
+REF_FILES = [GLOSSARY_JA, DECISIONS, DESIGN, TODO, NOTES, ROOT / "AGENTS.md"]
 # 使わない言葉を調べるファイル（議論の記録は、言葉そのものを話題にするので外す）
-BANNED_WORD_FILES = [DESIGN]
+BANNED_WORD_FILES = [DESIGN, TODO]
 
 LEVEL_NAMES = {"error": "エラー", "warning": "警告", "info": "お知らせ"}
 
@@ -151,19 +152,25 @@ def find_terms(text: str, terms: list[Term]) -> set[str]:
 
 
 def parse_glossary_terms(path: Path, header: str) -> list[Term]:
-    """用語集の 1〜3 章の表から、上から順に用語を集める。"""
+    """用語集の、見出しの 1 列目が header の表から、上から順に用語を集める。
+
+    章の番号では選ばない（章が増えても直さずに済むように）。言い方の決まりの表は、
+    見出しが違う（「層」「使わない言葉」など）ので入らない。
+    """
     terms: list[Term] = []
-    in_scope = False
+    in_term_table = False
     for no, line, in_code in read_lines(path):
-        if line.startswith("## "):
-            in_scope = bool(re.match(r"## [123]\.", line))
-            continue
-        if not in_scope or in_code:
+        if in_code or not line.strip().startswith("|"):
+            in_term_table = False
             continue
         cells = table_cells(line)
-        if not cells or len(cells) < 3 or cells[0] == header:
+        if cells is None:
+            continue  # 区切りの行（|---|）
+        if cells[0] == header:
+            in_term_table = True
             continue
-        terms.append(Term(cells[0], cells[1], " | ".join(cells[2:]), no))
+        if in_term_table and len(cells) >= 3:
+            terms.append(Term(cells[0], cells[1], " | ".join(cells[2:]), no))
     return terms
 
 
@@ -302,13 +309,9 @@ def check_banned_words(report: Report) -> None:
     targets: list[tuple[Path, int, str]] = []
     for path in BANNED_WORD_FILES:
         targets += [(path, no, line) for no, line, in_code in read_lines(path) if not in_code]
-    # 用語集は 1〜3 章の定義だけ（4 章は使わない言葉そのものを書いている）
-    in_scope = False
-    for no, line, in_code in read_lines(GLOSSARY_JA):
-        if line.startswith("## "):
-            in_scope = bool(re.match(r"## [123]\.", line))
-        elif in_scope and not in_code and table_cells(line):
-            targets.append((GLOSSARY_JA, no, line))
+    # 用語集は用語の表の定義だけ（言い方の決まりの表は、使わない言葉そのものを書いている）
+    for t in parse_glossary_terms(GLOSSARY_JA, "用語"):
+        targets.append((GLOSSARY_JA, t.line, f"{t.name} | {t.definition}"))
     for path, no, line in targets:
         text = strip_inline_code(line)
         for pattern, message in rules:
@@ -330,20 +333,36 @@ def check_english_glossary(report: Report, ja_terms: list[Term]) -> None:
         report.add("info", GLOSSARY_EN, 1, f"日本語版に無い用語：{name}")
 
 
-def collect_todo(report: Report) -> None:
-    """設計書の「決めること」の表と、議論の記録の「残り」を集める。"""
-    chapter = ""
-    in_todo = False
+def check_design_has_only_decided(report: Report) -> None:
+    """設計書には決まったことだけを書く（Roze の方針）。まだ決めていないことは宿題一覧へ。"""
     for no, line, in_code in read_lines(DESIGN):
         if in_code:
             continue
+        cells = table_cells(line)
+        if (line.startswith("#") and "決めること" in line) or (cells and len(cells) >= 2 and cells[1] == "決めること"):
+            report.add("warning", DESIGN, no, "設計書に「決めること」があります → 宿題一覧（todo.ja.md）へ移す")
+        elif "（案：" in line or "の案" in line.split("（")[0] and line.startswith("#"):
+            report.add("warning", DESIGN, no, "設計書に「案」があります → 宿題一覧（todo.ja.md）へ移す")
+
+
+def collect_todo(report: Report) -> None:
+    """宿題一覧の「決めること」の表と、議論の記録の「残り」を集める。"""
+    chapter = ""
+    in_todo_table = False
+    for no, line, in_code in read_lines(TODO):
         if line.startswith("## "):
             chapter = line[3:].strip()
-        if line.startswith("#"):
-            in_todo = "決めること" in line
+        if in_code or not line.strip().startswith("|"):
+            in_todo_table = False
             continue
         cells = table_cells(line)
-        if in_todo and cells and len(cells) >= 2 and cells[0] not in ("項目", "用語"):
+        if cells is None:
+            continue  # 区切りの行（|---|）
+        # 2 列目が「決めること」の表だけが宿題。案の中の表（プレースホルダの一覧など）は数えない
+        if len(cells) >= 2 and cells[1] == "決めること":
+            in_todo_table = True
+            continue
+        if in_todo_table and len(cells) >= 2:
             report.todo.append((chapter, no, f"{cells[0]}：{cells[1]}"))
     current = ""
     for no, line, in_code in read_lines(DECISIONS):
@@ -375,13 +394,13 @@ def print_report(report: Report, only_errors: bool, show_todo: bool) -> None:
         for f in sorted(items, key=lambda f: (rel(f.path), f.line)):
             print(f"  {rel(f.path)}:{f.line}  {f.message}")
     if show_todo and report.todo:
-        print(f"\n[宿題] 設計書の「決めること」{len(report.todo)} 件")
+        print(f"\n[宿題] 宿題一覧の「決めること」{len(report.todo)} 件")
         last = None
         for chapter, no, text in report.todo:
             if chapter != last:
                 print(f"  {chapter}")
                 last = chapter
-            print(f"    {rel(DESIGN)}:{no}  {text}")
+            print(f"    {rel(TODO)}:{no}  {text}")
 
 
 def main() -> int:
@@ -401,6 +420,7 @@ def main() -> int:
     ja_terms = check_glossary_order(report)
     check_banned_words(report)
     check_english_glossary(report, ja_terms)
+    check_design_has_only_decided(report)
     collect_todo(report)
 
     if args.summary:
