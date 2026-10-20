@@ -213,9 +213,26 @@ def check_links(report: Report) -> None:
                     report.add("error", path, no, f"リンク先 {target} がありません")
 
 
+def symbol_to_number(symbol: str) -> int:
+    """論点の記号を番号にする。Z の次は AA（表計算の列名と同じ数え方。A=1、Z=26、AA=27）。"""
+    n = 0
+    for ch in symbol:
+        n = n * 26 + (ord(ch) - ord("A") + 1)
+    return n
+
+
+def number_to_symbol(n: int) -> str:
+    """symbol_to_number の逆。"""
+    symbol = ""
+    while n > 0:
+        n, r = divmod(n - 1, 26)
+        symbol = chr(ord("A") + r) + symbol
+    return symbol
+
+
 def expand_refs(spec: str) -> list[str]:
-    """「O〜U」「Q、T」などを、論点の記号の一覧にする。"""
-    tokens = re.findall(r"[A-Z]|[〜~～]", spec)
+    """「O〜U」「Q、T」「Y〜AB」などを、論点の記号の一覧にする。"""
+    tokens = re.findall(r"[A-Z]+|[〜~～]", spec)
     letters: list[str] = []
     i = 0
     while i < len(tokens):
@@ -225,7 +242,10 @@ def expand_refs(spec: str) -> list[str]:
             continue
         if i + 2 < len(tokens) and tokens[i + 1] in "〜~～":
             end = tokens[i + 2]
-            letters.extend(chr(c) for c in range(ord(tok), ord(end) + 1))
+            letters.extend(
+                number_to_symbol(n)
+                for n in range(symbol_to_number(tok), symbol_to_number(end) + 1)
+            )
             i += 3
             continue
         letters.append(tok)
@@ -243,15 +263,15 @@ def check_decision_refs(report: Report) -> None:
         if letter in seen:
             report.add("error", DECISIONS, no, f"論点 {letter} が 2 回出てきます（最初は {seen[letter]} 行目）")
         seen[letter] = no
-    single = sorted(k for k in known if len(k) == 1)
-    if single:
-        expected = [chr(c) for c in range(ord("A"), ord(single[-1]) + 1)]
+    if known:
+        last = max(symbol_to_number(k) for k in known)
+        expected = [number_to_symbol(n) for n in range(1, last + 1)]
         missing = [c for c in expected if c not in known]
         if missing:
             report.add("error", DECISIONS, 1, f"論点の記号が抜けています：{'、'.join(missing)}")
 
-    # 参照先があるか
-    ref_re = re.compile(r"論点\s*([A-Z](?:\s*[〜~～、,]\s*[A-Z])*)(?![A-Za-z])")
+    # 参照先があるか。記号は Z の次から 2 文字（AA、AB、…）
+    ref_re = re.compile(r"論点\s*([A-Z]{1,2}(?:\s*[〜~～、,]\s*[A-Z]{1,2})*)(?![A-Za-z])")
     for path in REF_FILES:
         for no, line, in_code in read_lines(path):
             if in_code:
