@@ -123,11 +123,16 @@ AI と回すしくみ（AGENTS.md、CLAUDE.md、`.claude/` のスキル・エー
 - 書く先の迷い：選択肢の名前の付け直し（「何もしない」→「覚えるだけ」）は議論の記録に書いた。論点が Z で尽きたので、次の論点の記号を決める必要がある
 - 書き間違い：Edit で箇条の途中を置き換えたとき、元の文の後ろ半分が新しい子の箇条にくっついた。回ごとに、直した節を読み直すとよい
 
+### ai-loop を main に合流した（Roze が選んだ。ブランチの整理で）
+- 手元の新しい分を ai-loop にコミット（61ee2e8）してから、main にマージした（cc3db64）。ai-loop は消した。前の方針「main には入れない」を変えた
+  - 理由（Claude が示した）：AI のファイル 20 個が、どのブランチでも「git に入っていないファイル」に見えていた。ai-loop へのコミットに、毎回別のインデックスの回り道が要った
+  - main をプッシュしたので、AI の基盤も GitHub（非公開のリポジトリ）に載った
+- やり方：AI のファイルが「git に入っていないファイル」として手元に置いてあると、普通の `git merge` は止まる。`git merge-tree --write-tree` で木を作り、`git commit-tree` でマージコミットを作ってから、`git reset`（ファイルは触らない）で合わせた
+- 「ai-loop にだけ入れる」の書き方を直した：AGENTS.md（ファイルの地図、決まり 8）、`.claude/README.md`、save-notes スキル（表の「入れるブランチ」の列を消した）、`_common.py` のコメント、このファイルの冒頭。作業メモは 2 つに分けたまま
+- AGENTS.md の拡張機能（Agent Skills Ninja）のブロックと `.github/skills/README.md`：main に入れない。手元に残す（Roze）。AGENTS.md は、そのブロックの行だけが「コミットしていない変更」として残る
+- 「grill の『実際の見た目』を ai-loop にコミットする」は、もう 14efd71 に入っていた（手元と中身が同じだった）
+- 気づいたこと：Git Bash で `git show … | grep -c $'\r'` と数えると、LF のファイルでも CR があるように見えた。git の中の改行を確かめるときは、`git cat-file blob … | tr -cd '\r' | wc -c` でバイトを数える
+
 ## まだやっていないこと
-- grill スキルの「実際の見た目」の追記を、ai-loop にコミットする
 - grill の使い心地（上の 2026-10-20）を、スキルに入れるか Roze に聞く（回の始めに残りの数を見せる、など）
-- `scripts/doc_check.py` の直し（宿題の見出し、用語の表の読み方、宿題一覧、設計書の検査）と、AGENTS.md・term-guardian・design-verifier・doc-check スキルの直しを、ai-loop にコミットする
-- AGENTS.md の拡張機能（Agent Skills Ninja）のブロックと `.github/skills/README.md` を、ai-loop に入れるか Roze に聞く
 - 実装が始まったら、Stop フックに `cargo fmt --check`・`cargo clippy`・`cargo test` を足す
-- ai-loop は 2e47e68 から分かれていて、ai-loop の docs/ は古い。いつ main に入れるか（入れるなら、そのとき notes-ai.md も一緒に入る）
-- ai-loop は GitHub にまだプッシュしていない（2026-10-19、Roze：プッシュは main だけ）
