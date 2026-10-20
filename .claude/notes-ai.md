@@ -129,9 +129,15 @@ AI と回すしくみ（AGENTS.md、CLAUDE.md、`.claude/` のスキル・エー
   - main をプッシュしたので、AI の基盤も GitHub（非公開のリポジトリ）に載った
 - やり方：AI のファイルが「git に入っていないファイル」として手元に置いてあると、普通の `git merge` は止まる。`git merge-tree --write-tree` で木を作り、`git commit-tree` でマージコミットを作ってから、`git reset`（ファイルは触らない）で合わせた
 - 「ai-loop にだけ入れる」の書き方を直した：AGENTS.md（ファイルの地図、決まり 8）、`.claude/README.md`、save-notes スキル（表の「入れるブランチ」の列を消した）、`_common.py` のコメント、このファイルの冒頭。作業メモは 2 つに分けたまま
-- AGENTS.md の拡張機能（Agent Skills Ninja）のブロックと `.github/skills/README.md`：main に入れない。手元に残す（Roze）。AGENTS.md は、そのブロックの行だけが「コミットしていない変更」として残る
+- AGENTS.md の拡張機能（Agent Skills Ninja）のブロックと `.github/skills/README.md`：main に入れない。手元に残す（Roze）。AGENTS.md は、そのブロックの行だけが「コミットしていない変更」として残る（→ 同じ日のあとで、ブロックを消した。下の「Agent Skills Ninja のブロックを消した」）
 - 「grill の『実際の見た目』を ai-loop にコミットする」は、もう 14efd71 に入っていた（手元と中身が同じだった）
 - 気づいたこと：Git Bash で `git show … | grep -c $'\r'` と数えると、LF のファイルでも CR があるように見えた。git の中の改行を確かめるときは、`git cat-file blob … | tr -cd '\r' | wc -c` でバイトを数える
+
+### Agent Skills Ninja のブロックを消した（Roze：おすすめに従う）
+- Roze が `.github/` を消した（Roze：「.github は私が削除しました」）。AGENTS.md のブロックのリンクが切れ、Stop フックの突き合わせがエラー 1 で止めた
+- Claude のおすすめ「消す」を Roze が選び、AGENTS.md の最後の 8 行（`agent-ninja-START`〜`END`）を消した。もう「コミットしていない変更」は無い
+- 注意：Claude はおすすめのとき、上の「手元に残す（Roze）」を見落としていた。ただ、Roze が `.github/` を消していたので、ブロックを消すので合っていた。拡張機能がまた動けば、ブロックと `.github/skills/` を足し直すかもしれない
+- グローバルの CLAUDE.md にも同じ段落があるが、プロジェクトの外なので触っていない
 
 ## まだやっていないこと
 - grill の使い心地（上の 2026-10-20）を、スキルに入れるか Roze に聞く（回の始めに残りの数を見せる、など）
