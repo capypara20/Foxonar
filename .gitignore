@@ -1,0 +1,8 @@
+/target
+
+# Claude Code の個人設定とフックの覚え書き
+.claude/settings.local.json
+.claude/state/
+
+# Python が自動で作るキャッシュ
+__pycache__/
