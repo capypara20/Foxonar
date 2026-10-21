@@ -26,12 +26,15 @@ DOCS = ROOT / "docs"
 GLOSSARY_JA = DOCS / "glossary.ja.md"
 GLOSSARY_EN = DOCS / "glossary.md"
 DESIGN = DOCS / "design.ja.md"
+DESIGN_EN = DOCS / "design.md"
 TODO = DOCS / "todo.ja.md"
 NOTES = ROOT / ".claude" / "notes.md"
 
 # 相対リンクの行き先を確かめるファイル
 LINK_FILES = [
     *sorted(DOCS.glob("*.md")),
+    ROOT / "README.md",
+    ROOT / "README.en.md",
     ROOT / "AGENTS.md",
     ROOT / "CLAUDE.md",
     ROOT / ".claude" / "README.md",
@@ -287,7 +290,7 @@ def check_banned_words(report: Report) -> None:
 
 
 def check_english_glossary(report: Report, ja_terms: list[Term]) -> None:
-    """英訳の用語集と、用語がそろっているか（英訳は後回しなので、お知らせにとどめる）。"""
+    """英訳の用語集と、用語がそろっているか（英訳は区切りごとに追いつかせるので、お知らせにとどめる）。"""
     en_terms = parse_glossary_terms(GLOSSARY_EN, "English name")
     if not en_terms:
         return
@@ -295,9 +298,37 @@ def check_english_glossary(report: Report, ja_terms: list[Term]) -> None:
     ja_names = {t.en.lower() for t in ja_terms if t.en not in no_name}
     en_names = {t.name.lower() for t in en_terms if t.name not in no_name}
     for name in sorted(ja_names - en_names):
-        report.add("info", GLOSSARY_EN, 1, f"英訳に無い用語：{name}（英訳は仕様が固まってから）")
+        report.add("info", GLOSSARY_EN, 1, f"英訳に無い用語：{name}（区切りで英訳を追いつかせる）")
     for name in sorted(en_names - ja_names):
         report.add("info", GLOSSARY_EN, 1, f"日本語版に無い用語：{name}")
+
+
+def section_numbers(path: Path) -> dict[str, int]:
+    """設計書の「## 1.」「### 1.2」の番号と、その行番号を集める。"""
+    numbers: dict[str, int] = {}
+    for no, line, in_code in read_lines(path):
+        if in_code:
+            continue
+        m = re.match(r"^#{2,3} (\d+(?:\.\d+)?)\.?\s", line)
+        if m:
+            numbers.setdefault(m.group(1), no)
+    return numbers
+
+
+def check_english_design(report: Report) -> None:
+    """英訳の設計書と、節の番号がそろっているか。
+
+    中身のずれは機械では分からないので、節が増えた・消えたことだけを見る。英訳は区切りごとに
+    追いつかせるので、お知らせにとどめる。
+    """
+    en = section_numbers(DESIGN_EN)
+    if not en:
+        return
+    ja = section_numbers(DESIGN)
+    for num in sorted(set(ja) - set(en), key=lambda s: [int(x) for x in s.split(".")]):
+        report.add("info", DESIGN_EN, 1, f"英訳に無い節：{num}（設計書 {ja[num]} 行目。区切りで英訳を追いつかせる）")
+    for num in sorted(set(en) - set(ja), key=lambda s: [int(x) for x in s.split(".")]):
+        report.add("info", DESIGN_EN, en[num], f"日本語版に無い節：{num}")
 
 
 def check_design_has_only_decided(report: Report) -> None:
@@ -376,6 +407,7 @@ def main() -> int:
     ja_terms = check_glossary_order(report)
     check_banned_words(report)
     check_english_glossary(report, ja_terms)
+    check_english_design(report)
     check_design_has_only_decided(report)
     check_design_reasons(report)
     collect_todo(report)

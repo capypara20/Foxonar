@@ -1,0 +1,7 @@
+# WSL と Windows の 2 か所の clone で、同じ版の Rust を使うため（設計書 9.1）。
+# 版を上げるときは、ここを直す。
+[toolchain]
+channel = "1.98.1"
+components = ["rustfmt", "clippy"]
+# WSL から Windows 向けにビルドして、Windows の上でテストを走らせるため
+targets = ["x86_64-pc-windows-gnu"]
