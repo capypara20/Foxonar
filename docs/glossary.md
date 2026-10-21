@@ -2,7 +2,7 @@
 
 > **Note:** This is an English translation of [glossary.ja.md](glossary.ja.md).
 > The Japanese version is authoritative. If the two disagree, follow the Japanese version.
-> The decision log ([decisions.ja.md](decisions.ja.md)) and the design document ([design.ja.md](design.ja.md)) are in Japanese only for now.
+> The design document ([design.ja.md](design.ja.md)), which also records the reasons for each decision, is in Japanese only for now.
 > Last synced: 2026-10-18.
 
 Terms used in Foxonar. Design discussions and the implementation (type names and config keys) use the words defined here.
