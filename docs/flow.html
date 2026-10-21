@@ -269,7 +269,7 @@ const NODES = {
   rlog:    { label: 'ランログ', shape: 'db',
              info: 'ラン 1 回分ごとの記録。発火したときに書き、結果（待っている・走っている・成功・失敗・無視・中断）を書き換えていく。', refs: ['7.2'] },
   toast:   { label: 'デスクトップ通知', sub: '選んだときだけ', shape: 'opt',
-             info: 'OS の通知。検知・成功・失敗のどれを出すかは利用者が選ぶ。続けて届いたらまとめる。Windows のサービスと、画面のないサーバーでは出せない。', refs: ['8'] },
+             info: 'OS の通知。変化を検知したとき（監視フォルダに書く）・ランが成功したとき・失敗したときのどれを出すかは利用者が選ぶ。続けて届いたらまとめる。Windows のサービスと、画面のないサーバーでは出せない。', refs: ['8'] },
   rescan:  { label: '再スキャン', sub: '読み直して比べる', shape: 'side',
              info: 'フォルダを読み直して、覚えている中身と比べること。起動したとき・溢れのあと・フォルダが入ってきたときに行う。見つけた違いは変化として扱う。', refs: ['5.2', '5.6'] },
   memo:    { label: '覚えている中身', sub: '止めても残る', shape: 'side',
@@ -294,6 +294,7 @@ const EDGES = {
   'firing-run': {},
   'run-rlog': { label: '残す' },
   'run-toast': { dash: true },
+  'change-toast': { label: '検知したとき', dash: true },
   'ignore-rlog': { label: '無視の行' },
 };
 
@@ -327,7 +328,10 @@ const LAYOUTS = {
       'run-rlog': [[105, 360], [105, 410]],
       'run-toast': [[170, 360], [170, 385], [300, 385], [300, 410]],
       'ignore-rlog': [[530, 466], [530, 500], [225, 500], [225, 438], [190, 438]],
+      'change-toast': [[910, 200], [938, 200], [938, 395], [400, 395], [400, 410]],
     },
+    // 線の名前の位置を、自動ではなく決めるもの（ほかの名前とかぶるため）
+    lab: { 'change-toast': [820, 388, 'middle'] },
     hide: [],
   },
   tall: {
@@ -361,9 +365,10 @@ const LAYOUTS = {
       'run-rlog': [[120, 846], [120, 900]],
       'run-toast': [[220, 818], [250, 818]],
       'ignore-rlog': [[380, 598], [394, 598], [394, 928], [220, 928]],
+      'change-toast': [[220, 398], [238, 398], [238, 804], [250, 804]],
     },
     // 電話の幅では、狭い所の線の名前を出さない（箱にかぶるため）
-    hide: ['change-dlog', 'rescan-narrow', 'memo-narrow', 'trigger-stop', 'change-pending', 'pending-ignore', 'firing-pending', 'ignore-rlog'],
+    hide: ['change-dlog', 'rescan-narrow', 'memo-narrow', 'trigger-stop', 'change-pending', 'pending-ignore', 'firing-pending', 'ignore-rlog', 'change-toast'],
   },
 };
 
@@ -378,7 +383,7 @@ const SCENARIOS = [
       'トリガー `photos`（写真が来たら）：作成と名前変更・ファイル・フィルタ `*.jpg` → ジョブ `thumbnail` と `backup`（依存なし）',
       'ジョブ `thumbnail`：プロセス実行（サムネイルを作る）',
       'ジョブ `backup`：プロセス実行 `robocopy`（成功とみなす終了コードは 0〜7）',
-      'デスクトップ通知：ランが成功したときを選んでいる',
+      'デスクトップ通知：変化を検知したとき（監視フォルダ inbox に書く）と、ランが成功したときを選んでいる',
     ],
     learn: [
       '監視フォルダの条件で絞るのは、デバウンスの前',
@@ -405,13 +410,14 @@ const SCENARIOS = [
             'デバウンス時間は、最後の OS イベントから数え直す。書き込みが続く間は待ち続ける',
             'デバウンス時間は監視フォルダごとに変えられる。0 にするとまとめない'],
         refs: ['5.4'] },
-      { t: '変化を検知し、検知ログに残す', n: ['change', 'dlog'], e: ['deb-change', 'change-dlog'],
-        tags: { change: '作成 photo.jpg', dlog: '検知 101' },
+      { t: '変化を検知し、検知ログに残す', n: ['change', 'dlog', 'toast'], e: ['deb-change', 'change-dlog', 'change-toast'],
+        tags: { change: '作成 photo.jpg', dlog: '検知 101', toast: 'photo.jpg が来ました' },
         d: [{ id: 101, t: '10:01:05', f: 'inbox', k: 'ファイル', c: '作成', p: 'C:\\in\\photo.jpg' }],
         b: ['作成の変化を検知した。検知 ID 101 を振る',
             'トリガーに合うかどうかに関係なく、検知ログには残る',
+            '変化を検知したときを選んでいるので、「inbox に photo.jpg が来ました」のデスクトップ通知を出す。ジョブの無い監視フォルダでも使える',
             '覚えている中身にも `photo.jpg` を足す（ファイルかフォルダか、大きさ、更新日時も）'],
-        refs: ['7.1', '7.2', '5.2'] },
+        refs: ['7.1', '7.2', '5.2', '8'] },
       { t: 'トリガーに合うか', n: ['trigger'], e: ['change-trigger'], tags: { trigger: 'photos に合う' },
         tbl: { h: ['見るところ', 'photos に書いたこと', 'photo.jpg の作成'],
                r: [['変化の種類', '作成・名前変更', '作成 ✓'], ['反応する対象', 'ファイル', 'ファイル ✓'], ['フィルタ', '`*.jpg`', '`photo.jpg` ✓']] },
@@ -936,7 +942,7 @@ function drawDiagram(st, cur) {
     const d = 'M' + pts.map((p) => p.join(',')).join(' L');
     el('path', { d, class: `edge ${state}${EDGES[id].dash ? ' dash' : ''}`, 'marker-end': `url(#m-${state})` }, edgeLayer);
     if (EDGES[id].label && !L.hide.includes(id)) {
-      const [x, y, anchor] = labelPos(pts);
+      const [x, y, anchor] = (L.lab && L.lab[id]) || labelPos(pts);
       const t = el('text', { x, y, 'text-anchor': anchor, class: 'elbl' + (state === 'active' ? ' active' : '') }, labelLayer);
       t.textContent = EDGES[id].label;
     }
