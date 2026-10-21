@@ -16,7 +16,7 @@ flowchart BT
   subgraph base["1. 土台：みんなが読む決まり"]
     agents["AGENTS.md<br>AI 共通の説明書"]
     claude["CLAUDE.md<br>Claude 用の入口"]
-    docs["docs/<br>用語集・議論の記録・設計書"]
+    docs["docs/<br>用語集・設計書・宿題一覧"]
   end
   subgraph tools["2. 道具：手順とチェック役"]
     skills["スキル<br>grill / doc-check / save-notes / commit"]
@@ -97,7 +97,7 @@ python scripts/doc_check.py --todo
 | `/schedule` | 「毎朝 9 時に突き合わせて」 | クラウドで定期的に動かす |
 
 - **注意：トークン代**。回すたびに文書を読み直すので、使った量が増える。最初は短い回数で試す
-- **合格の基準が機械で判定できない仕事**（論点を決める、など）は、ループに向かない。Roze が決める
+- **合格の基準が機械で判定できない仕事**（設計を決める、など）は、ループに向かない。Roze が決める
 
 ## 新しい部品の足し方
 

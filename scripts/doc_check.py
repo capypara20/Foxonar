@@ -6,7 +6,7 @@
 
 使い方:
     python scripts/doc_check.py               # 調べて結果を出す
-    python scripts/doc_check.py --todo        # 宿題（決めること・残り）の一覧も出す
+    python scripts/doc_check.py --todo        # 宿題一覧の「決めること」の一覧も出す
     python scripts/doc_check.py --summary     # 件数だけを 1 行で出す
     python scripts/doc_check.py --only-errors # エラーだけを出す（フック用）
 
@@ -25,7 +25,6 @@ ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 GLOSSARY_JA = DOCS / "glossary.ja.md"
 GLOSSARY_EN = DOCS / "glossary.md"
-DECISIONS = DOCS / "decisions.ja.md"
 DESIGN = DOCS / "design.ja.md"
 TODO = DOCS / "todo.ja.md"
 NOTES = ROOT / ".claude" / "notes.md"
@@ -37,9 +36,10 @@ LINK_FILES = [
     ROOT / "CLAUDE.md",
     ROOT / ".claude" / "README.md",
 ]
-# 「論点 X」の参照先を確かめるファイル
-REF_FILES = [GLOSSARY_JA, DECISIONS, DESIGN, TODO, NOTES, ROOT / "AGENTS.md"]
-# 使わない言葉を調べるファイル（議論の記録は、言葉そのものを話題にするので外す）
+# 「論点 X」が残っていないかを調べるファイル（論点の記号は 2026-10-21 にやめた。
+# 昔の議論の記録 docs/archive/ と作業メモは、当時のまま残すので外す）
+REF_FILES = [GLOSSARY_JA, DESIGN, TODO, ROOT / "AGENTS.md"]
+# 使わない言葉を調べるファイル
 BANNED_WORD_FILES = [DESIGN, TODO]
 
 LEVEL_NAMES = {"error": "エラー", "warning": "警告", "info": "お知らせ"}
@@ -174,19 +174,6 @@ def parse_glossary_terms(path: Path, header: str) -> list[Term]:
     return terms
 
 
-def parse_decisions() -> list[tuple[str, str, bool, int]]:
-    """議論の記録の論点 (記号, 見出し, 決定か, 行番号) の一覧。"""
-    result = []
-    for no, line, in_code in read_lines(DECISIONS):
-        if in_code:
-            continue
-        m = re.match(r"^## ([A-Z]+)\. (.+)$", line)
-        if m:
-            title = m.group(2).strip()
-            result.append((m.group(1), title, title.endswith("（決定）"), no))
-    return result
-
-
 # ---------------------------------------------------------------- 調べること
 
 
@@ -213,78 +200,38 @@ def check_links(report: Report) -> None:
                     report.add("error", path, no, f"リンク先 {target} がありません")
 
 
-def symbol_to_number(symbol: str) -> int:
-    """論点の記号を番号にする。Z の次は AA（表計算の列名と同じ数え方。A=1、Z=26、AA=27）。"""
-    n = 0
-    for ch in symbol:
-        n = n * 26 + (ord(ch) - ord("A") + 1)
-    return n
-
-
-def number_to_symbol(n: int) -> str:
-    """symbol_to_number の逆。"""
-    symbol = ""
-    while n > 0:
-        n, r = divmod(n - 1, 26)
-        symbol = chr(ord("A") + r) + symbol
-    return symbol
-
-
-def expand_refs(spec: str) -> list[str]:
-    """「O〜U」「Q、T」「Y〜AB」などを、論点の記号の一覧にする。"""
-    tokens = re.findall(r"[A-Z]+|[〜~～]", spec)
-    letters: list[str] = []
-    i = 0
-    while i < len(tokens):
-        tok = tokens[i]
-        if tok in "〜~～":
-            i += 1
-            continue
-        if i + 2 < len(tokens) and tokens[i + 1] in "〜~～":
-            end = tokens[i + 2]
-            letters.extend(
-                number_to_symbol(n)
-                for n in range(symbol_to_number(tok), symbol_to_number(end) + 1)
-            )
-            i += 3
-            continue
-        letters.append(tok)
-        i += 1
-    return letters
-
-
-def check_decision_refs(report: Report) -> None:
-    decisions = parse_decisions()
-    known = {d[0] for d in decisions}
-
-    # 記号の重複と抜け
-    seen: dict[str, int] = {}
-    for letter, _, _, no in decisions:
-        if letter in seen:
-            report.add("error", DECISIONS, no, f"論点 {letter} が 2 回出てきます（最初は {seen[letter]} 行目）")
-        seen[letter] = no
-    if known:
-        last = max(symbol_to_number(k) for k in known)
-        expected = [number_to_symbol(n) for n in range(1, last + 1)]
-        missing = [c for c in expected if c not in known]
-        if missing:
-            report.add("error", DECISIONS, 1, f"論点の記号が抜けています：{'、'.join(missing)}")
-
-    # 参照先があるか。記号は Z の次から 2 文字（AA、AB、…）
-    ref_re = re.compile(r"論点\s*([A-Z]{1,2}(?:\s*[〜~～、,]\s*[A-Z]{1,2})*)(?![A-Za-z])")
+def check_no_ronten(report: Report) -> None:
+    """論点の記号は使わない。ほかの決まりを指すときは、設計書の節の番号（5.9 など）で指す。"""
+    ronten = re.compile(r"論点\s*[A-Z]{1,2}(?![A-Za-z])")
     for path in REF_FILES:
         for no, line, in_code in read_lines(path):
             if in_code:
                 continue
-            for m in ref_re.finditer(line):
-                for letter in expand_refs(m.group(1)):
-                    if letter not in known:
-                        report.add("error", path, no, f"論点 {letter} は議論の記録にありません")
+            m = ronten.search(strip_inline_code(line))
+            if m:
+                report.add(
+                    "warning", path, no,
+                    f"「{m.group(0)}」があります。論点の記号はもう使わない → 設計書の節の番号で指す",
+                )
 
-    # お知らせ：まだ決まっていない論点
-    for letter, title, decided, no in decisions:
-        if not decided:
-            report.add("info", DECISIONS, no, f"論点 {letter} はまだ決定していません：{title}")
+
+def check_design_reasons(report: Report) -> None:
+    """設計書の小さい節（### ）には、最後に「理由」の枠を置く（Roze の方針、2026-10-21）。"""
+    title, title_no, has_reason = "", 0, False
+
+    def close() -> None:
+        if title and not has_reason:
+            report.add("info", DESIGN, title_no, f"「{title}」に理由の枠（> **理由**）がありません")
+
+    for no, line, in_code in read_lines(DESIGN):
+        if in_code:
+            continue
+        if line.startswith("### ") or line.startswith("## "):
+            close()
+            title, title_no, has_reason = (line[4:].strip(), no, False) if line.startswith("### ") else ("", 0, False)
+        elif line.startswith("> **理由**"):
+            has_reason = True
+    close()
 
 
 def check_glossary_order(report: Report) -> list[Term]:
@@ -356,7 +303,8 @@ def check_english_glossary(report: Report, ja_terms: list[Term]) -> None:
 def check_design_has_only_decided(report: Report) -> None:
     """設計書には決まったことだけを書く（Roze の方針）。まだ決めていないことは宿題一覧へ。"""
     for no, line, in_code in read_lines(DESIGN):
-        if in_code:
+        # 理由の枠（> で始まる行）には「採らなかった案」を書くので、調べない
+        if in_code or line.startswith(">"):
             continue
         cells = table_cells(line)
         if (line.startswith("#") and "決めること" in line) or (cells and len(cells) >= 2 and cells[1] == "決めること"):
@@ -366,7 +314,7 @@ def check_design_has_only_decided(report: Report) -> None:
 
 
 def collect_todo(report: Report) -> None:
-    """宿題一覧の「決めること」の表と、議論の記録の「残り」を集める。"""
+    """宿題一覧の「決めること」の表を集める。"""
     chapter = ""
     in_todo_table = False
     for no, line, in_code in read_lines(TODO):
@@ -384,18 +332,6 @@ def collect_todo(report: Report) -> None:
             continue
         if in_todo_table and len(cells) >= 2:
             report.todo.append((chapter, no, f"{cells[0]}：{cells[1]}"))
-    current = ""
-    for no, line, in_code in read_lines(DECISIONS):
-        if in_code:
-            continue
-        m = re.match(r"^## ([A-Z]+)\.", line)
-        if m:
-            current = m.group(1)
-        elif re.match(r"^\s*- 残り", line):
-            text = line.strip()[2:]
-            if len(text) > 70:
-                text = text[:70] + "…"
-            report.add("info", DECISIONS, no, f"論点 {current} に残りがあります：{text}")
 
 
 # ---------------------------------------------------------------- 出力
@@ -436,11 +372,12 @@ def main() -> int:
     report = Report()
     check_code_fences(report)
     check_links(report)
-    check_decision_refs(report)
+    check_no_ronten(report)
     ja_terms = check_glossary_order(report)
     check_banned_words(report)
     check_english_glossary(report, ja_terms)
     check_design_has_only_decided(report)
+    check_design_reasons(report)
     collect_todo(report)
 
     if args.summary:
