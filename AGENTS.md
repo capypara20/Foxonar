@@ -21,7 +21,7 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 | `LICENSE-MIT` / `LICENSE-APACHE` | ライセンスの本文（MIT OR Apache-2.0。設計書 1.3） |
 | [docs/glossary.ja.md](docs/glossary.ja.md) | 用語集（**正本**）。言葉の意味だけ |
 | [docs/glossary.md](docs/glossary.md) | 用語集の英訳。区切りごとに追いつかせる |
-| [docs/archive/](docs/archive/) | 昔の議論の記録（2026-10-21 まで）。もう更新しない。経緯をたどるときだけ読む |
+| `docs/archive/` | 昔の議論の記録（2026-10-21 まで）。git には入れず、手元にだけ置く。もう更新しない。経緯をたどるときだけ読む |
 | [docs/design.ja.md](docs/design.ja.md) | 設計書（**正本**）。決まった「どうやるか」と、その理由（理由がある節は、最後の `> **理由**` の枠）。頭に「決まったことの要約」。章の中は 1.1 のような小番号で区切る |
 | [docs/design.md](docs/design.md) | 設計書の英訳。区切りごとに追いつかせる |
 | [docs/todo.ja.md](docs/todo.ja.md) | 宿題一覧。まだ決めていないことと、その案。設計書と同じ章立て |

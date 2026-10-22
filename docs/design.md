@@ -12,7 +12,7 @@ This is the design document for Foxonar. It records how things are done, as deci
 - What is not decided yet, and the proposals for it, go in the [to-do list](todo.ja.md) (Japanese only). Once something is decided, its method and reasons are written in a section here, and it is removed from the to-do list.
 - Words are used with the meanings in the [glossary](glossary.md).
 - A page that lets you follow the flow step by step, picking an example: [flow.html](flow.html) (open it in a browser; Japanese only). It is only an overview, so when the two disagree, follow this design document.
-- The history of the discussions up to 2026-10-21 is kept in the [old discussion record](archive/decisions-2026-10.ja.md) (Japanese only; you normally do not need to read it).
+- The history of the discussions up to 2026-10-21 is kept in the old discussion record `docs/archive/`. It is not in git and is kept only locally (Japanese only; you normally do not need to read it).
 - The chapters go from the outside in: purpose and scope → overall structure → Web UI → config file → watching and detection → executing runs → logs → desktop notifications. The last chapter, 9, is about what it is built with (the physical design).
 
 ## Summary of decisions

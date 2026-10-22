@@ -195,8 +195,16 @@ AI と回すしくみ（AGENTS.md、CLAUDE.md、`.claude/` のスキル・エー
 - コミット 0e32252（ブランチ `claude/multi-session-directory-control-aa0d03`。worktree の中）
 - メモ：元のフォルダと worktree で、フックのファイルの改行（LF と CRLF）が違ったが、中身は同じ
 
+### docs/archive を git の追跡から外し、main に入れてプッシュした（Roze が頼んだ）
+- `.gitignore` に `docs/archive/` を足し、`git rm --cached` で外した。手元のファイルは残る
+- Roze が選んだこと：最新から外すだけ（過去のコミットには残る。歴史は書き換えない）／合流で消える元のフォルダのファイルは戻して置く／リンクは外して場所を文字で残す
+- リンクを外した所：設計書の頭（design.ja.md・design.md）、AGENTS.md のファイルの地図。archive が無い状態（GitHub・WSL の clone と同じ）でも、突き合わせはエラー 0
+- 要るときは過去のコミットから取り出せる：`git show 6fb7703:docs/archive/decisions-2026-10.ja.md`（中身は手元のものと同じ。違いは改行だけ）
+- main への取り込み：別の会話が main を ae60f13 まで進めていた。アプリの取り込みは、grill スキルの変更（守られたファイル）があり、origin の確認が要るので止まった。Roze はスマホから操作していて確認できなかったので、中身（表の 1 行の言い直し）を確かめてから、git で直接 main を取り込んだ。作業メモの末尾がぶつかり、両方を残した（コミット 3c975ff）
+- WSL の clone で main を pull すると、archive は消える（戻さなくてよい）
+
 ## まだやっていないこと
-- フックの直し（コミット 0e32252、ブランチ `claude/multi-session-directory-control-aa0d03`）を、元のフォルダのブランチ `docs/physical-dev` に合流する（Roze があとで頼む）。合流するまで、worktree の会話のフックは元のフォルダを見たまま
+- 元のフォルダのブランチ `docs/physical-dev` に main を合流する（Roze が頼んだら）。フックの直し（0e32252）が元のフォルダで効くのは、そのあと。合流すると git が元のフォルダの `docs/archive/` を消すので、`git show 6fb7703:docs/archive/decisions-2026-10.ja.md` で戻す（Roze：元のフォルダに戻して置く）
 - 別の会話（物理設計の grill）は、決まり 10 を知らずに、設計書 9 章へ「Roze が選んだ」と書くかもしれない。突き合わせの警告で気づける
 - 2 つの会話を同時に動かすときの決まり（見本は上の 2026-10-23）を AGENTS.md に書くか
 - `docs/flow.html` を突き合わせの対象にするか（今は、設計書を変えたときに人やエージェントが読んで確かめる）
