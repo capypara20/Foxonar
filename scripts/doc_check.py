@@ -44,6 +44,8 @@ LINK_FILES = [
 REF_FILES = [GLOSSARY_JA, DESIGN, TODO, ROOT / "AGENTS.md"]
 # 使わない言葉を調べるファイル
 BANNED_WORD_FILES = [DESIGN, TODO]
+# 人の名前を書かないファイル（docs/ の *.md と flow.html のほかに）
+NAME_FREE_FILES = [ROOT / "README.md", ROOT / "README.en.md", ROOT / "AGENTS.md", ROOT / "CLAUDE.md"]
 
 LEVEL_NAMES = {"error": "エラー", "warning": "警告", "info": "お知らせ"}
 
@@ -218,23 +220,19 @@ def check_no_ronten(report: Report) -> None:
                 )
 
 
-def check_design_reasons(report: Report) -> None:
-    """設計書の小さい節（### ）には、最後に「理由」の枠を置く（Roze の方針、2026-10-21）。"""
-    title, title_no, has_reason = "", 0, False
+def check_no_names(report: Report) -> None:
+    """文書に人の名前（誰が選んだか、誰の案か）を書かない（AGENTS.md の決まり 10）。
 
-    def close() -> None:
-        if title and not has_reason:
-            report.add("info", DESIGN, title_no, f"「{title}」に理由の枠（> **理由**）がありません")
-
-    for no, line, in_code in read_lines(DESIGN):
-        if in_code:
-            continue
-        if line.startswith("### ") or line.startswith("## "):
-            close()
-            title, title_no, has_reason = (line[4:].strip(), no, False) if line.startswith("### ") else ("", 0, False)
-        elif line.startswith("> **理由**"):
-            has_reason = True
-    close()
+    理由の枠は、本文に書いた以上の理由がある節だけに置く決まりにしたので、枠の有る無しは調べない。
+    昔の議論の記録 docs/archive/ と作業メモは、当時のまま残すので外す。
+    """
+    names = re.compile(r"Roze|ロゼ|Claude の(?:おすすめ|案)|Claude's recommendation")
+    files = [*sorted(DOCS.glob("*.md")), DOCS / "flow.html", *NAME_FREE_FILES]
+    for path in files:
+        for no, line, _in_code in read_lines(path):
+            m = names.search(line)
+            if m:
+                report.add("warning", path, no, f"「{m.group(0)}」があります。文書には人の名前を書かない → 理由の中身だけを書く")
 
 
 def check_glossary_order(report: Report) -> list[Term]:
@@ -409,7 +407,7 @@ def main() -> int:
     check_english_glossary(report, ja_terms)
     check_english_design(report)
     check_design_has_only_decided(report)
-    check_design_reasons(report)
+    check_no_names(report)
     collect_todo(report)
 
     if args.summary:
