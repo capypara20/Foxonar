@@ -12,7 +12,42 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
+
+def _read_stdin() -> dict:
+    try:
+        return json.loads(sys.stdin.buffer.read().decode("utf-8") or "{}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return {}
+
+
+def _find_root(cwd: str | None) -> Path:
+    """会話が今いる作業場（worktree）のいちばん上のフォルダ。
+
+    CLAUDE_PROJECT_DIR は、worktree の会話でも元のフォルダを指す。
+    そのままだと、ほかの会話の変更を見てしまうので、届いた cwd から git に聞く。
+    cwd は Bash の cd で下のフォルダになることもあるが、git ならいちばん上が分かる。
+    """
+    if cwd:
+        try:
+            top = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                check=True,
+            ).stdout.strip()
+            if top:
+                return Path(top)
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    # git の外にいるときは、今までどおり
+    return Path(os.environ.get("CLAUDE_PROJECT_DIR") or Path(__file__).resolve().parents[2])
+
+
+# 標準入力は 1 回しか読めない。ROOT を決めるのに cwd が要るので、先に読んで取っておく
+_INPUT = _read_stdin()
+ROOT = _find_root(_INPUT.get("cwd"))
 DOC_CHECK = ROOT / "scripts" / "doc_check.py"
 NOTES = ROOT / ".claude" / "notes.md"
 # AI の基盤の話だけを書く作業メモ。設計の話を書く notes.md と混ぜないために分けた
@@ -31,10 +66,7 @@ def setup_utf8() -> None:
 
 
 def read_input() -> dict:
-    try:
-        return json.loads(sys.stdin.buffer.read().decode("utf-8") or "{}")
-    except (json.JSONDecodeError, UnicodeDecodeError):
-        return {}
+    return _INPUT
 
 
 def to_rel(path: str | Path) -> str | None:
