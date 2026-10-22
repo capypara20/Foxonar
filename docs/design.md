@@ -2,13 +2,13 @@
 
 > **Note:** This is an English translation of [design.ja.md](design.ja.md).
 > The Japanese version is authoritative. If the two disagree, follow the Japanese version.
-> Last synced: 2026-10-22.
+> Last synced: 2026-10-23 (up to 9.2).
 > Terms follow the [glossary](glossary.md). See its translation notes ("watched folder", and when the verb "run" is avoided).
 
 This is the design document for Foxonar. It records how things are done, as decided, and the reasons for those decisions.
 
 - What is written here has been decided. Anything decided only provisionally is marked "provisional".
-- The "Reasons" box at the end of each section holds the reasons, the options that were not chosen, and what was verified. When a similar topic comes up, look here.
+- A section that has reasons beyond its body text, options that were not chosen, or things that were verified ends with a "Reasons" box that holds them. When a similar topic comes up, look here.
 - What is not decided yet, and the proposals for it, go in the [to-do list](todo.ja.md) (Japanese only). Once something is decided, its method and reasons are written in a section here, and it is removed from the to-do list.
 - Words are used with the meanings in the [glossary](glossary.md).
 - A page that lets you follow the flow step by step, picking an example: [flow.html](flow.html) (open it in a browser; Japanese only). It is only an overview, so when the two disagree, follow this design document.
@@ -43,10 +43,6 @@ This is the design document for Foxonar. It records how things are done, as deci
 | Use on a desktop | Starts at login | A browser on the same PC | Can be shown |
 | Use as a server | As a service | A browser on your own machine, through an SSH tunnel | Cannot be shown |
 
-> **Reasons**
-> - Keep the detection log even without jobs: Roze wants to check what files came into a folder without writing any jobs.
-> - Also target servers without a screen: Roze wants to use it on servers too. For this, the screen was separated from the core (2.1).
-
 ### 1.2 What it does not do
 
 - Executing commands through a shell. External programs are started with exec (4.4).
@@ -65,12 +61,6 @@ This is the design document for Foxonar. It records how things are done, as deci
 - Foxonar is licensed under MIT OR Apache-2.0. Users can choose either one. The texts are in `LICENSE-MIT` and `LICENSE-APACHE` at the top of the repository.
 - The copyright notice is `Copyright (c) 2026 capypara20`.
 - Contributions (pull requests, etc.) are published under the same two licenses unless the contributor states otherwise.
-
-> **Reasons**
-> - A permissive license: Roze wants it to be usable by companies and to be freely modified.
-> - MIT OR Apache-2.0: the same as Rust itself and most crates. MIT is short and simple; Apache-2.0 also has a patent grant. Letting users choose fits both.
->   - Not chosen: MIT only, Apache-2.0 only, GPL-3.0 (anyone who distributes a modified version must publish its source, which makes it harder for companies to use).
-> - The name `capypara20`: the same as the GitHub and git name.
 
 ## 2. Overall structure
 
@@ -111,8 +101,7 @@ flowchart LR
 - `core` collides with Rust's built-in `core`, so in the code the crate name avoids it, for example `foxonar-core`.
 
 > **Reasons**
-> - No screen in the core; the screen is the Web UI: a native GUI (egui, etc.) and a web screen were compared. A native GUI opens no port, so it is the safer side, but it does not work on Linux without a screen and cannot be used from other PCs or smartphones. A web screen can be used from servers without a screen, and some day from other PCs too (Roze's request). In exchange, the web server needs protection (3.1).
-> - The core keeps going when the Web UI is closed: watching and runs must continue while nobody is looking at the screen.
+> - No screen in the core; the screen is the Web UI: a native GUI (egui, etc.) and a web screen were compared. A native GUI opens no port, so it is the safer side, but it does not work on Linux without a screen and cannot be used from other PCs or smartphones. A web screen can be used from servers without a screen, and some day from other PCs too. In exchange, the web server needs protection (3.1).
 
 ### 2.2 Flow
 
@@ -146,7 +135,7 @@ flowchart TD
 - When something matched a trigger but did not fire (a change made by Foxonar itself; created and then deleted; no longer matching after the pending table merged it again; no longer matching after the config was reloaded while waiting in the pending table; the watched folder was lost while waiting in the pending table — 5.7, 5.9, 4.2, 5.11), an "ignored" row is recorded in the run log (7.2).
 
 > **Reasons**
-> - All three sources go through debounce: when a folder is copied in, it would be wrong for the create made by reading inside the folder and the Created for the same path from the OS to become two separate rows (Roze: it is wrong for two rows to appear when it was not created twice). Everything goes through debounce so that the same path is merged into one.
+> - All three sources go through debounce: when a folder is copied in, it would be wrong for the create made by reading inside the folder and the Created for the same path from the OS to become two separate rows (it was created only once). Everything goes through debounce so that the same path is merged into one.
 
 ### 2.3 How it starts
 
@@ -157,10 +146,6 @@ flowchart TD
   - By default, Windows services run with strong permissions (LocalSystem). Exec steps also execute with those permissions.
   - Drive letters (`Z:`, etc.) are assigned per login, so services cannot see them. Write shared folders as UNC paths (`\\server\share`).
 
-> **Reasons**
-> - Both can be chosen: a server needs a service that works without anyone logging in, and a desktop needs starting at login so that desktop notifications can be shown.
-> - A service can choose its user: LocalSystem has too much permission. It also lets the service reach shared folders with that user's permissions.
-
 ### 2.4 Preventing double start
 
 - Only one core can use the same config file. Cores with different config files may run at the same time.
@@ -169,9 +154,6 @@ flowchart TD
 - This "preventing double start" is different from the glossary's "lock" (the mark meaning "a firing is in progress on this path"). To avoid confusion, it is not called a "lock".
 - If cores with different config files watch the same watched folder (or overlapping places), Foxonar does not notice. Runs from both cores execute for the same path. A lock is a mark inside one core only, so it is not shared with other cores. This is the user's responsibility, and it will be written in the user documentation.
   - Example: core 1 moves a file in `C:\in` to `D:\done`, and core 2 uploads the same file. If the move finishes first, the upload fails with "file not found".
-
-> **Reasons**
-> - No need to notice overlaps: cores with different config files watching the same place is how the user set things up, so it is the user's responsibility (Roze).
 
 ### 2.5 Stopping the core
 
@@ -208,15 +190,13 @@ flowchart TD
 > **Reasons**
 > - Protection is needed: being able to change the config from the Web UI means being able to make it execute programs.
 > - Always require a token: if other users also use the same PC, they can connect to `127.0.0.1` too. There are also attacks where another site opened in the browser sends requests to localhost (CSRF, DNS rebinding), so "listening only on localhost" is not enough.
-> - Allow HTTP on `127.0.0.1`: Roze wanted to force HTTPS, but connections inside the same PC never leave the PC, and SSH tunnels are already encrypted. Browsers warn about self-made certificates, and public certificate authorities do not issue certificates for `localhost`. HTTPS would add almost no protection, only the trouble of warnings. The risks of localhost are handled by the token and similar measures.
+> - Allow HTTP on `127.0.0.1`: Forcing HTTPS was also considered, but connections inside the same PC never leave the PC, and SSH tunnels are already encrypted. Browsers warn about self-made certificates, and public certificate authorities do not issue certificates for `localhost`. HTTPS would add almost no protection, only the trouble of warnings. The risks of localhost are handled by the token and similar measures.
 
 ### 3.2 What it can do
 
 - View and change the config.
 - View the detection log, the run log, and the app log. Follow the detection log and the run log by ID (7.2).
-
-> **Reasons**
-> - View logs in the Web UI: people only read log files when something goes wrong. Normally, Roze wants to see them in the Web UI.
+- Logs are normally viewed in the Web UI. The log files are meant to be opened only when something goes wrong.
 
 ## 4. Config file
 
@@ -231,7 +211,6 @@ flowchart TD
 
 > **Reasons**
 > - TOML: comments can be written, and it is the same format as Rust's `Cargo.toml`.
-> - Check before saving: so that people's edits are not lost.
 
 ### 4.2 Reloading
 
@@ -247,9 +226,9 @@ flowchart TD
   - Note: if reloading fails while running and Foxonar is stopped without fixing it (a PC restart, etc.), it will not start the next time.
 
 > **Reasons**
-> - Do not start if loading fails at startup: Roze chose this.
->   - Not chosen: start with the last config that loaded correctly (this was Claude's recommendation).
-> - Do not write a config version: a version for the config file is not needed, but Roze wants reloads in the log.
+> - Do not start if loading fails at startup.
+>   - Not chosen: start with the last config that loaded correctly.
+> - Do not write a config version: a version for the config file is not needed, but reloads should be in the log.
 
 ### 4.3 How the config parts connect
 
@@ -271,11 +250,11 @@ flowchart TD
 - To use the same job in another watched folder, write a separate trigger that points to the same job.
 
 > **Reasons**
-> - Write triggers outside, pointing by ID: the config can be normalized. Jobs are also pointed to by ID, so the shape is consistent (Roze: the structure may be complex, but if it is normalized, this shape is the best).
+> - Write triggers outside, pointing by ID: the config can be normalized. Jobs are also pointed to by ID, so the shape is consistent. The structure becomes a little complex, but if it is normalized, this shape is the best.
 > - Only one watched folder: to use several kinds of change, listing them in one trigger is enough. Using the same job in several watched folders is rare, and when needed, separate triggers can point to the same job.
 > - Allow watched folders without triggers: sometimes you want the detection log even without jobs (1.1).
 > - Allow multiple jobs: if it were limited to one, starting another job under the same conditions would mean writing two triggers with the same conditions.
-> - Write depth as a number: more intuitive than patterns like `**` (Roze).
+> - Write depth as a number: more intuitive than patterns like `**`.
 > - Give triggers a match depth too: if it were only on the watched folder, you would have to create two watched folders with different depths at the same place, and each change would be recorded twice in the detection log.
 
 ### 4.4 Steps
@@ -292,9 +271,8 @@ flowchart TD
 
 > **Reasons**
 > - No separate step for creating folders: separate steps are added once the situations that need them are clear.
-> - Drop the recycle bin: the crate for moving to the recycle bin (`trash`) returned success on a Windows network location but deleted the file without putting it in the recycle bin (experiment on 2026-10-21). "Fail where the recycle bin cannot be used" cannot be built as it is. There were other concerns too: a service would put files in another user's recycle bin, and on a server without a screen they would keep piling up (Roze: if it is hard by design, it is fine to drop it).
+> - Drop the recycle bin: the crate for moving to the recycle bin (`trash`) returned success on a Windows network location but deleted the file without putting it in the recycle bin (experiment on 2026-10-21). "Fail where the recycle bin cannot be used" cannot be built as it is. There were other concerns too: a service would put files in another user's recycle bin, and on a server without a screen they would keep piling up. It is hard by design, so it was dropped.
 >   - Not chosen: allow the recycle bin only on local drives, checking the drive type before deleting.
-> - Programs can be written by name: Roze wants to write them as full paths, as names looked up in PATH, and with environment variables.
 > - Allow `.bat` and `.cmd`: Windows internally starts cmd and passes them to it, so by design it is the same as going through a shell. However, since Rust 1.77.2 the standard library escapes arguments for cmd and returns an error for arguments it cannot make safe (the fix for CVE-2024-24576). It may fail on files with unusual names, but no unintended command is executed. If they were forbidden, people who want them would write `cmd /C ...`, which is outside this protection, so it would actually be more dangerous.
 
 ## 5. Watching and detection
@@ -323,11 +301,10 @@ flowchart TD
   - When a folder comes in, the conditions are applied first. The inside of a folder that was left out is not rescanned (5.6).
 
 > **Reasons**
-> - Narrow by watched folder: if every change were recorded in the detection log, Office temporary files (`~$…`) and files being downloaded such as `.crdownload` and `.part` would make it much larger (Roze).
-> - Do not detect deleting hidden files either: when the condition is "do not include hidden files", not detecting their deletion is the natural reading (Roze).
+> - Narrow by watched folder: if every change were recorded in the detection log, Office temporary files (`~$…`) and files being downloaded such as `.crdownload` and `.part` would make it much larger.
+> - Do not detect deleting hidden files either: when the condition is "do not include hidden files", not detecting their deletion is the natural reading.
 > - A file that becomes hidden later is a delete: unless it is removed from the known state when it becomes hidden, a delete would appear later when it is deleted.
 > - Detect when unsure: this matches the choice to record even something that came only for a moment in the detection log (5.4).
-> - Leave out everything inside a left-out folder: if you write that `.git` is left out, you expect everything under it, to the very end, to be left out (Roze). The same idea as `.gitignore`.
 
 ### 5.2 While stopped, and the known state
 
@@ -355,13 +332,13 @@ flowchart TD
   - When the OS does not say which watched folder overflowed, all watched folders are rescanned (inotify on Linux does not say where the overflow happened).
 
 > **Reasons**
-> - One of them must be written: not writing it is not an option. Either choice greatly changes whether jobs execute, so the user chooses (Roze).
-> - Update the known state even with "remember only": the known state is also used while running (telling hidden-file deletes apart 5.1, the rescan after an overflow, and the paths inside a folder that disappeared 5.6). If it stayed old, the rescan after an overflow would even turn what happened while stopped into changes. Even when it is updated, the differences are not turned into changes, so the intent of "do nothing" is kept (the answer to Roze's question "If it does nothing, why does it need to remember again?").
-> - Compare by size and modified time: files overwritten while stopped are found too (the same way rsync and Syncthing tell them apart). Remembering more would make it heavier, which Roze wants to avoid.
+> - One of them must be written: not writing it is not an option. Either choice greatly changes whether jobs execute, so the user chooses.
+> - Update the known state even with "remember only": the known state is also used while running (telling hidden-file deletes apart 5.1, the rescan after an overflow, and the paths inside a folder that disappeared 5.6). If it stayed old, the rescan after an overflow would even turn what happened while stopped into changes. Even when it is updated, the differences are not turned into changes, so the intent of "do nothing" is kept (the answer to the question "If it does nothing, why does it need to remember again?").
+> - Compare by size and modified time: files overwritten while stopped are found too (the same way rsync and Syncthing tell them apart). Remembering more would make it heavier, which should be avoided.
 >   - Not chosen: file IDs (they could even tell renames while stopped apart, but they change every time on USB sticks and some network drives), content fingerprints (slow, because every file is read at each start).
 > - Handle only the part whose range changed: if it were compared with the known state as it is, just changing the path from `C:\in` to `D:\in` would make every file in `C:\in` look deleted, and delete triggers (such as also deleting from the backup) would fire. Redoing everything could execute runs again for every path after only a small change in the conditions.
 > - Differences after an overflow are also changes: to recover what was missed by the overflow.
-> - Only once, after things calm down: overflows happen when the system is busy, such as during a large copy. Rescanning right away at every overflow would read the whole folder again and again in the middle of a heavy copy. The same idea as debounce (Roze).
+> - Only once, after things calm down: overflows happen when the system is busy, such as during a large copy. Rescanning right away at every overflow would read the whole folder again and again in the middle of a heavy copy. The same idea as debounce.
 
 ### 5.3 Moves to and from outside the watched folder
 
@@ -396,7 +373,7 @@ flowchart TD
 - To avoid confusion with the kinds of change, os events are written with the names FileSystemWatcher uses (Created, Changed, Deleted, Renamed).
 
 > **Reasons**
-> - Keep debounce: Roze also considered "no debounce at all" (simpler, reacts without waiting, and nothing the OS reported is lost). Dropping it causes problems:
+> - Keep debounce: "no debounce at all" was also considered (simpler, reacts without waiting, and nothing the OS reported is lost). Dropping it causes problems:
 >   - In a watched folder that leaves out temporary files, saving in Word gives a delete and a create, and delete triggers (such as also deleting from the backup) would fire.
 >   - On Linux, copying a large file delivers an os event for every write (about 9,000 for 1 GB; experiment on 2026-10-20), so the detection log would get thousands of rows.
 >   - Overwriting directly delivers Changed twice, so it would become two modifies.
@@ -434,13 +411,12 @@ flowchart TD
 - There is no per-watched-folder setting for whether to tell moves apart. You choose by whether a trigger lists "move".
 
 > **Reasons**
-> - Renames and moves are boundaries: Roze wants a rename to be caught as a rename. A rename and a modify that happen together are better kept separate, so that the jobs after them can be configured precisely (Roze).
->   - Not chosen: treat it as a rename only when the original path is "present → absent" and the new path is "absent → present", and count everything else by "first and last state". A file written under a temporary name and renamed right away would be a create, and saving in Word would be a modify, splitting the rules by case (Roze: it is better to be fully consistent).
-> - Keep moves separate from renames: moving to a subfolder does not change the name (Roze: Linux, which calls it a rename, is closer to a false detection. A rename does not fit into the three kinds of create, modify, and delete, and it is better to add a kind). If it were called delete + create, just moving a file would fire create and delete triggers (example: `inbox\report.pdf` → `inbox\done\report.pdf` would execute the thumbnail job and the cloud delete).
+> - Renames and moves are boundaries: a rename should be caught as a rename. A rename and a modify that happen together are better kept separate, so that the jobs after them can be configured precisely.
+>   - Not chosen: treat it as a rename only when the original path is "present → absent" and the new path is "absent → present", and count everything else by "first and last state". A file written under a temporary name and renamed right away would be a create, and saving in Word would be a modify, splitting the rules by case. It is better to be fully consistent.
+> - Keep moves separate from renames: moving to a subfolder does not change the name (Linux, which calls it a rename, is closer to a false detection. A rename does not fit into the three kinds of create, modify, and delete, so it is better to add a kind). If it were called delete + create, just moving a file would fire create and delete triggers (example: `inbox\report.pdf` → `inbox\done\report.pdf` would execute the thumbnail job and the cloud delete).
 >   - Not chosen: call it delete + create (easy to build, but changing it to a move later would change how existing triggers behave); call it a rename (the name did not change).
-> - When the name also changes, both apply: Roze wants both rename triggers and move triggers to react.
->   - Not chosen: make it only a move (this was Claude's recommendation); make it only a rename.
-> - No per-watched-folder setting: choosing by whether a trigger lists "move" is enough.
+> - When the name also changes, both apply: both rename triggers and move triggers should react.
+>   - Not chosen: make it only a move; make it only a rename.
 > - Verified (2026-10-21): when a file is moved to another subfolder inside a watched folder, Windows reports Deleted + Created (+ a Changed for the destination folder), and Linux reports Renamed. On Windows too, the newer API lets them be paired up by file ID (5.12).
 
 ### 5.6 Folder changes
@@ -476,12 +452,10 @@ C:\watch
 
 > **Reasons**
 > - Extend a folder coming in or going out to the paths inside: for moving a whole folder or deleting it to the recycle bin, the OS reports nothing about the paths inside. For copying or Shift+Delete, it reports them one by one. Left as is, the same action would execute jobs or not depending on how it was done. The result is made the same either way (the same idea of consistency as 5.5).
->   - Where it started: folders also come into watched folders. In cat-watcher too, with triggers that targeted folders, it was confusing whether to separate the create of a folder from the creates of the files inside it (Roze).
->   - Roze's concern "isn't it difficult?": when it comes in, the inside is read with the same mechanism as a rescan, and when it disappears, the deletes are created from the known state, so little new machinery is needed. Facebook's Watchman also remembers contents and reports them one by one.
-> - Keep detection and triggers separate: detection records everything one by one, and triggers choose what to react to.
-> - A folder rename is only one: only the name changed; the names of the files inside did not. Renaming `C:\Program` to `C:\Program2` and getting a rename for everything under it would be too much (Roze).
-> - A folder move is also only one: the same idea as renames (confirmed by Roze).
-> - Do not create folder modifies: Windows delivers a Changed for the folder every time something happens inside it, and Linux does not (experiment on 2026-10-21). Using them as they are would make the behavior differ by OS. Even when folders are watched, there is almost no situation where detecting their modifies is useful (Roze). If "a change inside the folder" is wanted later, Foxonar can build it from the changes of the paths directly inside.
+>   - Where it started: folders also come into watched folders. In cat-watcher too, with triggers that targeted folders, it was confusing whether to separate the create of a folder from the creates of the files inside it.
+>   - The concern "isn't it difficult?": when it comes in, the inside is read with the same mechanism as a rescan, and when it disappears, the deletes are created from the known state, so little new machinery is needed. Facebook's Watchman also remembers contents and reports them one by one.
+> - A folder rename is only one: only the name changed; the names of the files inside did not. Renaming `C:\Program` to `C:\Program2` and getting a rename for everything under it would be too much.
+> - Do not create folder modifies: Windows delivers a Changed for the folder every time something happens inside it, and Linux does not (experiment on 2026-10-21). Using them as they are would make the behavior differ by OS. Even when folders are watched, there is almost no situation where detecting their modifies is useful. If "a change inside the folder" is wanted later, Foxonar can build it from the changes of the paths directly inside.
 
 ### 5.7 Changes made by Foxonar itself
 
@@ -493,7 +467,6 @@ C:\watch
 
 > **Reasons**
 > - Only the original trigger does not fire: this prevents a job from triggering itself forever. Hand-offs to other triggers (`inbox` → `work`) should still work.
-> - What cannot be told apart is the user's responsibility: Foxonar cannot know what an exec step does (the same idea as the dependency warning in 6.1).
 
 ### 5.8 Renames, moves, and filters
 
@@ -504,7 +477,7 @@ C:\watch
   - Example: in a watched folder that leaves out `*.crdownload`, when `photo.jpg.crdownload` becomes `photo.jpg`, it is a create of `photo.jpg`. In this case it is caught as a create even without "rename" in the trigger.
 
 > **Reasons**
-> - Apply to the new path: the target path of a run is the new path. For a delete the file no longer exists, and a rename or move spans two paths, so the target of a run is a "path", not a "file"; the new path is the target, and the old path is extra information. The way triggers are matched follows the same idea (confirmed by Roze).
+> - Apply to the new path: the target path of a run is the new path. For a delete the file no longer exists, and a rename or move spans two paths, so the target of a run is a "path", not a "file"; the new path is the target, and the old path is extra information. The way triggers are matched follows the same idea.
 > - Treat renames and moves across the folder conditions as create and delete: the same idea as treating a move in from outside as a create (5.3).
 
 ### 5.9 What waits in the pending table
@@ -554,15 +527,15 @@ flowchart TD
 - Pending table rows do not disappear when the core stops. At the next start, they continue waiting from where they left off (2.5).
 
 > **Reasons**
-> - Put settle after matching a trigger (provisional): a path that does not match has no job, so there is no point in waiting (Roze). Roze is concerned that the app's load might become high.
+> - Put settle after matching a trigger (provisional): a path that does not match has no job, so there is no point in waiting. There is a concern that the app's load might become high, so this is provisional.
 >   - Not chosen: wait as a continuation of debounce (wait before checking whether it matches a trigger). It would wait even for files that have no job.
 > - Wait for the contents of a folder create: firing as soon as the folder is created would execute the job before the contents have finished copying (`zip-folder` would make a zip with only about three photos).
 >   - Not chosen: let each trigger choose whether to wait (one more setting; and even when it waits, a move within the same drive fires right away, so there are few situations where it causes trouble).
-> - Do not throw away changes that arrive during a firing: if they were thrown away, a file saved again during its upload would stay as the old version (Roze: it should execute after that job finishes).
+> - Do not throw away changes that arrive during a firing: if they were thrown away, a file saved again during its upload would stay as the old version. It should execute again after that job finishes.
 > - Merge non-matching changes into the row too: if only matching changes were merged, the row's "first and last state" would drift from the real state. In the `report.xlsx` example above, without merging the create, the row would stay a delete, and a file you still have would be deleted from the cloud.
 > - Do not execute anything when created and then deleted: the pending table is where it is decided what to execute, so a file that only came and went does not get an upload or "also delete from the cloud". Debounce keeps both the create and the delete to record in the detection log that something "came for a moment"; that is a different purpose.
 > - Renames and moves are boundaries: consistent with 5.5.
-> - Record only the last detection ID: Roze chose this. The rows of earlier changes cannot be followed to the run.
+> - Record only the last detection ID. The rows of earlier changes cannot be followed to the run, and that is accepted.
 > - The check interval can be set per watched folder: on network drives, each check is slow, so it should be longer.
 > - Verified (2026-10-20): Windows has no notification for "a file opened for writing was closed". A copy reaches its final size the moment it starts writing, and something that writes with pauses stops growing at every pause, so "the size has not changed for a while" is unreliable. "Can it be opened exclusively?" became possible right after the file was closed. On Linux, a notification arrived the moment it was closed. How to decide is in the to-do list, chapter 5.
 
@@ -574,7 +547,6 @@ flowchart TD
 
 > **Reasons**
 > - Do not stop waiting: firing partway would execute jobs on a half-written file.
-> - Do not use workers: so that files that are appended to constantly (such as logs) do not block runs for other paths.
 
 ### 5.11 When a watched folder is lost
 
@@ -594,14 +566,14 @@ flowchart TD
 - Note: when a watched folder is renamed, until it is known to be lost, the OS returns os events under the new name with the original path (on both Windows and Linux). Nothing is at the original path anymore, so most runs fired from there become ignores at the pre-start check (6.2).
 
 > **Reasons**
-> - Make rules for this: there were no rules for when the watched folder itself disappears or is renamed (Roze: an oversight). It happens when a USB stick is unplugged, a network drive is disconnected, or a person deletes, renames, or moves it to the recycle bin.
+> - Make rules for this: there were no rules for when the watched folder itself disappears or is renamed (an oversight). It happens when a USB stick is unplugged, a network drive is disconnected, or a person deletes, renames, or moves it to the recycle bin.
 > - Check every few seconds: on Windows, renaming the watched folder makes the OS report nothing (the watch follows the folder), so the only way is to go and check. The same mechanism also notices USB or network disconnections. Only one path is checked, so it is light (for example, 10 watched folders every 3 seconds is 3 checks per second).
 >   - Not chosen: also watch the folder one level up (it would not notice if the folder above disappears too).
 > - Do not turn it into delete changes: if they were deletes, just unplugging a USB stick would execute delete triggers (such as also deleting from the cloud) for every file inside.
 >   - Not chosen: turn every path inside into a delete (the same handling as a folder disappearing in 5.6).
-> - Remove pending table rows and waiting runs, and write ignores: Roze: also remove the data from the pending table and so on. "Why did a job not execute?" can always be answered from the run log (7.2).
-> - Record a row in the detection log: to clearly show that the watched folder disappeared (Roze). Even looking only at the detection log, you can notice the gap in that period.
-> - When it reappears, only remember and watch again: Roze: all the files that were there at first are ignored. This prevents, for example when another USB stick is plugged in, all the earlier files from looking deleted or all the files inside from looking created.
+> - Remove pending table rows and waiting runs, and write ignores: also remove the data from the pending table and so on. "Why did a job not execute?" can always be answered from the run log (7.2).
+> - Record a row in the detection log: to clearly show that the watched folder disappeared. Even looking only at the detection log, you can notice the gap in that period.
+> - When it reappears, only remember and watch again: all the files that were there at first are ignored. This prevents, for example when another USB stick is plugged in, all the earlier files from looking deleted or all the files inside from looking created.
 >   - Not chosen: follow the choice of 5.2 (decided once, then changed); also turn what disappeared into deletes; treat it as having no known state when the folder's file ID shows it is a different folder (even the same USB stick can get a different ID when plugged in again); do not restore automatically, and let the user restore it.
 > - Verified (2026-10-21): when a watched folder was deleted, Windows (notify) reported only deletes of the files inside, and Linux also reported the delete of the watched folder itself. When it was renamed, Windows reported nothing and Linux reported it. On both, os events under the new name were returned with the original path, and creating it again did not bring the watch back.
 
@@ -618,10 +590,10 @@ flowchart TD
 - On Linux, the inotify part of notify is used as it is. A Renamed across folders becomes a move (5.5).
 
 > **Reasons**
-> - Use the newer API on Windows: notify uses the older version (ReadDirectoryChangesW) and throws away overflows (0 bytes received). It does not get file IDs either, so the Deleted and Created of a move cannot be paired up (Roze: it is a problem that the Windows API notify uses is old).
-> - Fork notify instead of dropping it: keep using notify, and fix only the Windows part (Roze).
+> - Use the newer API on Windows: notify uses the older version (ReadDirectoryChangesW) and throws away overflows (0 bytes received). It does not get file IDs either, so the Deleted and Created of a move cannot be paired up (it is a problem that the Windows API notify uses is old).
+> - Fork notify instead of dropping it: keep using notify, and fix only the Windows part.
 >   - Not chosen: do not use notify, and have Foxonar use ReadDirectoryChangesExW directly (decided once, then changed).
-> - Fall back where it cannot be used, and report it: Roze chose this.
+> - Fall back where it cannot be used, and report it.
 >   - Not chosen: only turn moves into delete + create, without reporting.
 > - Verified (2026-10-20 to 21):
 >   - With notify as it is, on Windows, overflows silently dropped os events by the hundreds (only about 5,000 of 20,000 arrived, with no overflow sign and no error). On Linux, the overflow sign arrived.
@@ -668,7 +640,7 @@ flowchart TD
 
 > **Reasons**
 > - An ignore if it does not exist: executing after a previous job moved or deleted the file is not a failure; the reason to execute has simply gone away.
-> - Runs with dependencies do not check: if they did, B in the example above would become an ignore (Roze: if A succeeded, B should start).
+> - Runs with dependencies do not check: if they did, B in the example above would become an ignore (if A succeeded, B should start).
 
 ### 6.3 Step success and failure
 
@@ -697,7 +669,7 @@ flowchart TD
 
 > **Reasons**
 > - A failure when the limit is exceeded: the reason it stopped is a limit the user wrote, so it is not an interruption (Foxonar's own circumstances).
-> - No limit if not written: sometimes you cannot know how long something will take (Roze).
+> - No limit if not written: sometimes you cannot know how long something will take.
 
 ### 6.5 How steps are stopped
 
@@ -718,7 +690,6 @@ flowchart TD
   - A run of a job that does not retry stays interrupted. The jobs that depend on that run are not started (6.1).
 
 > **Reasons**
-> - No retrying by hand: Roze decided this.
 > - Choose per job whether to retry automatically: some jobs give the same result however many times they execute (conversion, thumbnails), and some cause trouble if executed again (appending to a CSV, sending).
 
 ## 7. Logs
@@ -745,7 +716,7 @@ flowchart TD
 > - Split into three logs: you want to check what files came even without jobs (detection log). You want to see the results of runs (run log). You want to read Foxonar's own problems separately (app log).
 > - The detection log and the run log in SQLite: easy to filter in the Web UI, to follow by ID, and to delete old entries.
 > - The app log as text: when something goes wrong, people read it from the top.
-> - Do not keep output on success: when it succeeded, knowing that it succeeded is enough (Roze).
+> - Do not keep output on success: when it succeeded, knowing that it succeeded is enough.
 > - Also keep the end of standard output on failure: robocopy writes its errors to standard output too. So do scripts that write errors with `echo` in a bat file or `print` in Python. With standard error alone, the reason for the failure would not be kept.
 > - Keep overflow and lost rows: so that when you check what came using the detection log, you can also notice that something was missed.
 
@@ -828,10 +799,9 @@ Run log
 - They cannot be shown from a Windows service or on a server without a screen (2.3).
 
 > **Reasons**
-> - Make desktop notifications: with only one watched folder where files arrive only occasionally, Roze wants to be told when something arrives.
+> - Make desktop notifications: with only one watched folder where files arrive only occasionally, you want to be told when something arrives.
 > - The user chooses: the idea of making "failures only" the default does not fit the request above (being told when something arrives), so it was not chosen.
 > - Show the first one right away: when files arrive only occasionally, you want to be told without waiting. When many arrive, they must be combined, or the desktop notifications would fill the screen.
-> - Problems are not an option: Roze did not choose them.
 
 ## 9. How it is built
 
@@ -844,7 +814,7 @@ This chapter covers what it is built with (the physical design): which tools are
 
 | Place | Path | Use |
 |---|---|---|
-| WSL (Ubuntu-24.04) | `~/developer/foxonar` | Roze writes the Rust code and executes it on Linux. Opened with the VS Code WSL extension |
+| WSL (Ubuntu-24.04) | `~/developer/foxonar` | The Rust code is written and executed on Linux here. Opened with the VS Code WSL extension |
 | Windows | `C:\Users\capypara20\Developer\02_App\foxonar` (the existing place) | Design documents, work notes, Claude Code. cargo can also be used with the Windows Rust (gnu toolchain) |
 
 - The two are kept in sync through GitHub. Push from one, and pull in the other.
@@ -883,21 +853,21 @@ git config --global credential.helper "/mnt/c/ProgramData/scoop/apps/git/current
 - Setup (once, at the start): on Ubuntu, `sudo apt install mingw-w64`, apply the git settings above, and create the WSL clone. The Windows target is installed by rustup when it reads `rust-toolchain.toml`.
 
 > **Reasons**
-> - Develop in WSL: Linux is lighter and better suited for development (Roze). The target is Windows, so it is also checked on Windows.
+> - Develop in WSL: Linux is lighter and better suited for development. The target is Windows, so it is also checked on Windows.
 > - Ubuntu-24.04: it already has Rust (1.98.1, the same as Windows), git, and python3, and the experiments during the design (2026-10-20 to 21) worked here too.
 >   - Not chosen: archlinux (the current WSL default; it only has the root user, and has neither git nor python3).
 > - Clone in two places: files inside WSL are fast, and Linux watching (inotify) can be tried. Claude Code and the AI tooling (hooks, etc.) can stay in the existing Windows place.
 >   - Not chosen: only one clone in WSL (the way Claude Code is used would change, and the `python` the hooks call does not exist on Ubuntu); keep only the Windows clone and work on it from WSL through `/mnt/c` (slow, and WSL tools do not notice files changed on the Windows side, because os events (inotify notifications) do not arrive on `/mnt/c`; experiment on 2026-10-21).
 > - Checks on Windows also from WSL: even with half-written code, it can be checked on Windows without pushing and pulling.
 >   - Not chosen: do the Windows checks with cargo in the Windows clone (every check would need a push in WSL and a pull on Windows); check both ways.
-> - Make cargo usable in the Windows clone too: it is fine to have a Rust development environment on Windows as well (Roze). With the default host set to gnu, it is the same kind as the usual gnu toolchain, and Visual Studio Build Tools are not needed.
->   - Not chosen: use the MSVC toolchain (install Visual Studio Build Tools; several GB); do not execute cargo in the Windows clone (this was written once, but changed after Roze's comment).
+> - Make cargo usable in the Windows clone too: it is fine to have a Rust development environment on Windows as well. With the default host set to gnu, it is the same kind as the usual gnu toolchain, and Visual Studio Build Tools are not needed.
+>   - Not chosen: use the MSVC toolchain (install Visual Studio Build Tools; several GB); do not execute cargo in the Windows clone (this was written once, but changed).
 > - Pin the version: prevents the two places from drifting apart when only one side executes `rustup update`.
 >   - Not chosen: write `channel = "stable"` (it becomes the latest stable of each place, which can drift); do not put the file.
-> - Do not unify line endings: Roze chose this. Rust code works with either CRLF or LF, and the contents of the repository are LF whichever side commits.
->   - Not chosen: use `.gitattributes` to check out with LF in both clones (this was Claude's recommendation; in the experiments during the design, a `.sh` on the Windows side became CRLF and did not work in WSL).
-> - Keep only the icons and `build.rs` from the trial code: Roze chose this. The `Cargo.toml` used eframe (a native screen), which does not fit the design where the core has no screen (2.1).
->   - Not chosen: commit everything and continue in WSL (this was Claude's recommendation); do nothing (nothing would reach the WSL side).
+> - Do not unify line endings: Rust code works with either CRLF or LF, and the contents of the repository are LF whichever side commits.
+>   - Not chosen: use `.gitattributes` to check out with LF in both clones (in the experiments during the design, a `.sh` on the Windows side became CRLF and did not work in WSL).
+> - Keep only the icons and `build.rs` from the trial code: the `Cargo.toml` used eframe (a native screen), which does not fit the design where the core has no screen (2.1).
+>   - Not chosen: commit everything and continue in WSL; do nothing (nothing would reach the WSL side).
 > - Use the Windows login: once logged in on Windows, pushing works from WSL too. GitHub login information does not have to be kept separately in two places.
 >   - Not chosen: GitHub CLI (`gh auth login`; it needs a separate login from Windows), SSH keys.
 > - Check automatically on both OSes: even if you forget to check on Windows from WSL, you will notice. It also shows whether it works on a real Windows machine, not through this PC's WSL. The repository is public, so it is free.
@@ -947,7 +917,7 @@ foxonar/
 > **Reasons**
 > - One package: with one Cargo.toml, there is nothing to get lost in. As a lib, the parts can be called from the tests in `tests/`. cat-watcher, built earlier, was also one package with modules side by side.
 >   - Not chosen: split into a workspace from the start (`foxonar-core`, `foxonar`, `foxonar-web`; the compiler would guarantee that the core does not depend on the screen or the CLI, but there would be more Cargo.toml files and more to learn); only `main.rs` (the parts could not be called from `tests/`).
-> - tokio: the core waits for many things at the same time (os events, the debounce time per path, the write checks per pending table row, calming down after an overflow, checking whether a watched folder was lost, the end of executing processes, time limits, the stop signal and the grace period, changes to the config file, and connections to the Web UI in stage 4). It has the clock, time limits, and stop signals (`timeout`, `select!`) ready to use, and the tools for the Web UI (axum, etc.) also need tokio. cat-watcher also used tokio. It also fits the end of Roze's learning order (the ROADMAP of thread-async-learn: synchronous → threads → epoll → hand-written Future → tokio → reading cat-watcher).
+> - tokio: the core waits for many things at the same time (os events, the debounce time per path, the write checks per pending table row, calming down after an overflow, checking whether a watched folder was lost, the end of executing processes, time limits, the stop signal and the grace period, changes to the config file, and connections to the Web UI in stage 4). It has the clock, time limits, and stop signals (`timeout`, `select!`) ready to use, and the tools for the Web UI (axum, etc.) also need tokio. cat-watcher also used tokio. It also fits the end of the learning order (the ROADMAP of thread-async-learn: synchronous → threads → epoll → hand-written Future → tokio → reading cat-watcher).
 >   - Not chosen: threads (std; managing deadlines by hand for each thing being waited for, and tokio would be needed when the Web UI is added); start with threads and move to tokio in stage 4 (moving would mean rewriting).
 > - One loop holds the state: the state is changed in only one place, so there are no bugs from fighting over locks (Mutex). Messages are handled one at a time in the order they arrive, so tests can reproduce the same order as many times as needed.
 >   - Not chosen: share the state with `Arc<Mutex<…>>` and let each part lock and touch it (getting the lock order wrong makes it hang, and the order of changes differs on every execution).
