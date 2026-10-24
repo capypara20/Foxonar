@@ -203,8 +203,14 @@ AI と回すしくみ（AGENTS.md、CLAUDE.md、`.claude/` のスキル・エー
 - main への取り込み：別の会話が main を ae60f13 まで進めていた。アプリの取り込みは、grill スキルの変更（守られたファイル）があり、origin の確認が要るので止まった。Roze はスマホから操作していて確認できなかったので、中身（表の 1 行の言い直し）を確かめてから、git で直接 main を取り込んだ。作業メモの末尾がぶつかり、両方を残した（コミット 3c975ff）
 - WSL の clone で main を pull すると、archive は消える（戻さなくてよい）
 
+### 元のフォルダを main にし、docs/physical-dev を消した（2026-10-23。Roze の頼み）
+- 宿題一覧の見直しの会話（worktree `homework-implementation-prep-db4215`）で行った。設計の話は notes.md
+- 元のフォルダを `docs/physical-dev` から main に切り替えた。フックの直し（0e32252）が元のフォルダでも効く。git が消した `docs/archive/` は、切り替える前に一時フォルダへ写しておき、戻した（git には入らない設定）
+- ブランチ `docs/physical-dev` は、中身がすべて main に入っていたので、手元と GitHub から消した
+- アプリの取り込み（sync_with_base_branch）は、main にフックのファイルの変更があると、取り込み元の確認（Help → Troubleshooting → Review Pinned Git Origins）が済むまで止まる。スマホからは確認できないので、`git merge-tree` と `git commit-tree` で、作業ツリーに触らずに main の上に積んだ（コミット 3286802）
+  - 次から：取り込み元を PC のアプリで一度確認しておくと、アプリの取り込みが使える
+
 ## まだやっていないこと
-- 元のフォルダのブランチ `docs/physical-dev` に main を合流する（Roze が頼んだら）。フックの直し（0e32252）が元のフォルダで効くのは、そのあと。合流すると git が元のフォルダの `docs/archive/` を消すので、`git show 6fb7703:docs/archive/decisions-2026-10.ja.md` で戻す（Roze：元のフォルダに戻して置く）
 - 別の会話（物理設計の grill）は、決まり 10 を知らずに、設計書 9 章へ「Roze が選んだ」と書くかもしれない。突き合わせの警告で気づける
 - 2 つの会話を同時に動かすときの決まり（見本は上の 2026-10-23）を AGENTS.md に書くか
 - `docs/flow.html` を突き合わせの対象にするか（今は、設計書を変えたときに人やエージェントが読んで確かめる）
