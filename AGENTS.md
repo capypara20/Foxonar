@@ -25,7 +25,7 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 | [docs/design.ja.md](docs/design.ja.md) | 設計書（**正本**）。決まった「どうやるか」と、その理由（理由がある節は、最後の `> **理由**` の枠）。頭に「決まったことの要約」。章の中は 1.1 のような小番号で区切る |
 | [docs/design.md](docs/design.md) | 設計書の英訳。区切りごとに追いつかせる |
 | [docs/todo.ja.md](docs/todo.ja.md) | 宿題一覧。まだ決めていないことと、その案。設計書と同じ章立て |
-| [docs/flow.html](docs/flow.html) | 図つきのページ。設計書の例を、流れの図の上で 1 段ずつ追う（ブラウザで開く）。見取り図で、正本ではない。設計書を変えたら、例が食い違っていないか確かめる |
+| [docs/flow.html](docs/flow.html) | 図つきのページ。設計書の例を、流れの図の上で 1 段ずつ追う（ブラウザで開く）。下に「トリガーとジョブのしくみ」の節もある。見取り図で、正本ではない。設計書を変えたら、例が食い違っていないか確かめる。見た目は `docs/flow.css`、例と図の中身は `docs/flow-data.js`、動かすところは `docs/flow.js` |
 | [.claude/notes.md](.claude/notes.md) | 作業メモ。会話の要点と「まだやっていないこと」。セッションをまたぐ記憶 |
 | [.claude/notes-ai.md](.claude/notes-ai.md) | AI の基盤（この説明書、スキル、エージェント、フック、`scripts/`）の作業メモ。設計の話（notes.md）とは分けて書く |
 | [scripts/doc_check.py](scripts/doc_check.py) | 文書の突き合わせスクリプト（下の「確かめ方」） |

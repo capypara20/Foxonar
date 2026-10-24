@@ -44,7 +44,7 @@ LINK_FILES = [
 REF_FILES = [GLOSSARY_JA, DESIGN, TODO, ROOT / "AGENTS.md"]
 # 使わない言葉を調べるファイル
 BANNED_WORD_FILES = [DESIGN, TODO]
-# 人の名前を書かないファイル（docs/ の *.md と flow.html のほかに）
+# 人の名前を書かないファイル（docs/ の *.md と、図つきのページ flow.html・flow-data.js・flow.js のほかに）
 NAME_FREE_FILES = [ROOT / "README.md", ROOT / "README.en.md", ROOT / "AGENTS.md", ROOT / "CLAUDE.md"]
 
 LEVEL_NAMES = {"error": "エラー", "warning": "警告", "info": "お知らせ"}
@@ -227,7 +227,7 @@ def check_no_names(report: Report) -> None:
     昔の議論の記録 docs/archive/ と作業メモは、当時のまま残すので外す。
     """
     names = re.compile(r"Roze|ロゼ|Claude の(?:おすすめ|案)|Claude's recommendation")
-    files = [*sorted(DOCS.glob("*.md")), DOCS / "flow.html", *NAME_FREE_FILES]
+    files = [*sorted(DOCS.glob("*.md")), DOCS / "flow.html", DOCS / "flow-data.js", DOCS / "flow.js", *NAME_FREE_FILES]
     for path in files:
         for no, line, _in_code in read_lines(path):
             m = names.search(line)

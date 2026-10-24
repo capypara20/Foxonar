@@ -210,9 +210,17 @@ AI と回すしくみ（AGENTS.md、CLAUDE.md、`.claude/` のスキル・エー
 - アプリの取り込み（sync_with_base_branch）は、main にフックのファイルの変更があると、取り込み元の確認（Help → Troubleshooting → Review Pinned Git Origins）が済むまで止まる。スマホからは確認できないので、`git merge-tree` と `git commit-tree` で、作業ツリーに触らずに main の上に積んだ（コミット 3286802）
   - 次から：取り込み元を PC のアプリで一度確認しておくと、アプリの取り込みが使える
 
+## 2026-10-25
+
+### 図つきのページを 4 つのファイルに分けた（Roze の頼み。ページの中身の話は notes.md）
+- Roze：「JS, Css でファイル分けて」→ `docs/flow.html`（骨組み）・`flow.css`・`flow-data.js`（例と図の中身）・`flow.js`（動かすところ）にした。file:// で開いても動くように、モジュールにせず、ふつうのスクリプトで読み込む
+- AGENTS.md のファイルの地図の行に、3 つのファイルを足した
+- 突き合わせスクリプトの「人の名前を書かない」の確かめに、`flow-data.js`・`flow.js` を足した
+- 確かめ方：アプリ内のブラウザは file:// のページを 1 枚の写しにするので、分けた CSS・JS を読めない。`.claude/launch.json`（`python -m http.server --directory docs`）で開いて確かめ、終わったら消した（git には入れていない）
+
 ## まだやっていないこと
 - 別の会話（物理設計の grill）は、決まり 10 を知らずに、設計書 9 章へ「Roze が選んだ」と書くかもしれない。突き合わせの警告で気づける
 - 2 つの会話を同時に動かすときの決まり（見本は上の 2026-10-23）を AGENTS.md に書くか
-- `docs/flow.html` を突き合わせの対象にするか（今は、設計書を変えたときに人やエージェントが読んで確かめる）
+- `docs/flow.html`（中身は `docs/flow-data.js`）を突き合わせの対象にするか（今は、人の名前だけを調べ、意味のずれは設計書を変えたときに人やエージェントが読んで確かめる）
 - grill の使い心地（上の 2026-10-20）を、スキルに入れるか Roze に聞く（回の始めに残りの数を見せる、など）
 - 実装が始まったら、Stop フックに `cargo fmt --check`・`cargo clippy`・`cargo test` を足す
