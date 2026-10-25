@@ -48,7 +48,7 @@
 
   <section class="card guide" id="guide" aria-labelledby="guide-title">
     <h2 id="guide-title">トリガーとジョブのしくみ</h2>
-    <p class="lead">設定の部品（監視フォルダ・トリガー・ジョブ・ステップ）が何を持ち、どうつながって動くか。設定ファイルでの書き方（キー名など）は、まだ決めていません（宿題一覧 9 章）。</p>
+    <p class="lead">設定の部品（監視フォルダ・トリガー・ジョブ・ステップ）が何を持ち、どうつながって動くか。設定ファイルは、<code>foxonar.toml</code>（全体の設定・監視フォルダ・トリガー）と <code>jobs.toml</code>（ジョブ）の 2 つ。書き方は設計書 9.6（最小の流れで読むキーまで決まっていて、残りは宿題一覧 9 章）。</p>
     <nav class="toc" aria-label="この節の中身">
       <a href="#g-parts">1. 部品のつながり</a>
       <a href="#g-match">2. トリガーに合うかの見方</a>
@@ -183,9 +183,10 @@
       <li><code>.bat</code> と <code>.cmd</code> はそのまま起動できる。<code>.ps1</code> は、プログラムに <code>powershell</code>（か <code>pwsh</code>）を書き、引数を <code>-File スクリプト</code> にする。</li>
       <li>標準エラーへの出力は、成否に使わない（ffmpeg は、うまくいっていても途中経過を標準エラーに出す）。PowerShell の <code>Write-Error</code> だけでは成功に見えるので、失敗させたいときは <code>exit 1</code> を書く。</li>
       <li>常駐するコアの PATH は、ターミナルの PATH と違うことがある（「ターミナルでは動くのに、常駐させると動かない」）。</li>
-      <li>対象パスなどを引数に渡す書き方（<code>${path}</code> などのプレースホルダ）は、まだ決めていない（宿題一覧 4.3 に案）。</li>
+      <li>対象パスなどは、プレースホルダで引数に渡す。<code>${path}</code>（<code>C:\in\photos\cat.jpg</code>）、<code>${dir}</code>、<code>${name}</code>、<code>${stem}</code>、<code>${ext}</code>、<code>${rel}</code>、<code>${old_path}</code>、変化を検知した日時の <code>${date}</code>（<code>2026-10-25</code>）と <code>${time}</code>（<code>23-59-10</code>）、環境変数は <code>${env:NAME}</code>。</li>
+      <li>ID は利用者が英数字で書き（例：<code>inbox</code>）、わかりやすい名前（例：受信箱）は別に書く。名前はいつ変えてもよい。</li>
     </ul>
-    <div class="refs" data-refs="4.4 6.1 6.3 6.4 6.6"></div>
+    <div class="refs" data-refs="4.4 6.1 6.3 6.4 6.6 9.6"></div>
 
     <h3 id="g-run">5. 発火からランへ</h3>
     <p>トリガー <code>photos</code>（作成・<code>*.jpg</code>）のジョブは <code>thumbnail</code>・<code>backup</code>・<code>upload</code>。依存は「<code>upload</code> は <code>backup</code> のあと」。<code>cat.jpg</code> の作成（検知 101）で発火すると、ジョブごとにランが 1 つずつできる。</p>
