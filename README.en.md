@@ -44,6 +44,7 @@ the results go to the run log, which you can view in the browser (Web UI)
 | [Glossary](docs/glossary.md) ([Japanese](docs/glossary.ja.md)) | The meaning of the words used in Foxonar |
 | [To-do list](docs/todo.ja.md) (Japanese only) | What is not decided yet, and the proposals |
 | [Flow page](docs/flow.html) (Japanese only) | Follows the design document's examples step by step on a flow diagram. GitHub shows it as HTML source, so clone or download it and open it in a browser |
+| [Web UI mockup](docs/external-design/webui.html) (Japanese only) | A proposal for the screens that show the config and logs. It runs on sample data and you can click through it. Open it the same way as the flow page |
 
 - The Japanese documents are authoritative. If a translation disagrees, follow the Japanese version.
 

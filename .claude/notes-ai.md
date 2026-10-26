@@ -218,6 +218,13 @@ AI と回すしくみ（AGENTS.md、CLAUDE.md、`.claude/` のスキル・エー
 - 突き合わせスクリプトの「人の名前を書かない」の確かめに、`flow-data.js`・`flow.js` を足した
 - 確かめ方：アプリ内のブラウザは file:// のページを 1 枚の写しにするので、分けた CSS・JS を読めない。`.claude/launch.json`（`python -m http.server --directory docs`）で開いて確かめ、終わったら消した（git には入れていない）
 
+## 2026-10-27
+
+### Web UI の見本を足した（ページの中身の話は notes.md）
+- AGENTS.md のファイルの地図に、外部設計のフォルダ `docs/external-design/`（今は Web UI の見本 `webui.html` と、見た目・データ・動きの 3 つのファイル）の行を足した
+- 突き合わせスクリプトの「人の名前を書かない」の確かめに、`external-design/` の `webui.html`・`webui-data.js`・`webui.js` を足した（flow と同じ形で並べた）
+- 確かめ方は 2026-10-25 とほぼ同じ（`.claude/launch.json` で `python -m http.server`、終わったら消した）。見本は `../assets/icon.png` を読むので、`docs` ではなくリポジトリの一番上から出した。アプリ内のブラウザの欄が隠れていると、画面の写しが古いまま返る。欄を表に出し、少し待ってから写す。中身は JavaScript で DOM を読んで確かめるほうが確実
+
 ## まだやっていないこと
 - 別の会話（物理設計の grill）は、決まり 10 を知らずに、設計書 9 章へ「Roze が選んだ」と書くかもしれない。突き合わせの警告で気づける
 - 2 つの会話を同時に動かすときの決まり（見本は上の 2026-10-23）を AGENTS.md に書くか

@@ -44,6 +44,7 @@ C:\inbox に cat.jpg が来た
 | [用語集](docs/glossary.ja.md)（[英訳](docs/glossary.md)） | Foxonar で使う言葉の意味 |
 | [宿題一覧](docs/todo.ja.md) | まだ決めていないことと、その案 |
 | [図つきのページ](docs/flow.html) | 設計書の例を、流れの図の上で 1 段ずつ追う。GitHub では HTML のまま表示されるので、clone かダウンロードをして、ブラウザで開く |
+| [Web UI の見本](docs/external-design/webui.html) | 設定とログを見る画面の案。仮のデータで、押して動かせる。開き方は図つきのページと同じ |
 
 - 日本語の文書が正本です。英訳と食い違うときは、日本語版に従います。
 

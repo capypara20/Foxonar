@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foxonar の Web UI（見本）</title>
+<link rel="icon" href="../../assets/icon.png">
+<link rel="stylesheet" href="webui.css">
+</head>
+<body>
+<div class="mockbar" id="mockbar" role="region" aria-label="見本の操作">
+  <span class="mock-tag">見本</span>
+  <span class="mock-desc">Web UI の画面の案。データは仮のもので、コアにはつながっていない。正本は <a href="../design.ja.md">設計書</a>。</span>
+  <div class="mock-ctrl">
+    <span class="mlbl">場面</span>
+    <span class="mseg" role="group" aria-label="場面">
+      <button type="button" data-scene="normal">ふだん</button>
+      <button type="button" data-scene="trouble">困りごとがある</button>
+      <button type="button" data-scene="login">合言葉の入力</button>
+    </span>
+    <span class="mlbl">動かし方</span>
+    <span class="mseg" role="group" aria-label="コアの動かし方">
+      <button type="button" data-mode="desktop">デスクトップ</button>
+      <button type="button" data-mode="service">サービス</button>
+    </span>
+    <span class="mlbl">設定の数</span>
+    <span class="mseg" role="group" aria-label="設定の数">
+      <button type="button" data-many="0">ふだん</button>
+      <button type="button" data-many="1">多い</button>
+    </span>
+    <label class="mchk"><input type="checkbox" id="conflictChk">保存のときにぶつかる</label>
+    <button type="button" class="mbtn" id="notesBtn" data-act="notes" aria-pressed="false">説明を出す</button>
+    <button type="button" class="mbtn" id="themeBtn" data-act="theme">ダークにする</button>
+  </div>
+</div>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+<script src="webui-data.js"></script>
+<script src="webui.js"></script>
+</body>
+</html>
