@@ -1,0 +1,12 @@
+[package]
+name = "foxonar"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+notify = "8.2.1"
+
+
+[build-dependencies]
+image = "0.25.10"
+winresource = "0.1.34"
