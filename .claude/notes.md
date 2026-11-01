@@ -829,6 +829,30 @@
 - 図つきのページ：キー名・プレースホルダ・ID の説明を今の決定に合わせた。確かめ方は 2026-10-25 と同じ（http.server、終わったら launch.json を消した）
 - git の確かめが、自動の安全チェックの一時的な不具合で 2 回通らなかった → `.git/refs` を直接読んで、main と GitHub の main が 127186c でそろっていることを確かめた
 
+## 2026-11-01
+
+### 実装を始めた：次の手とモジュールの書き方（Roze が決めた。設計書 9.2）
+- Roze：notify の書き方がなんとなく分かった（ブランチ `practice/notify`、コミット 30a4548）。「次はどこから？」
+- Claude のおすすめ（Roze に見せた）：骨組み作り（`lib.rs` を作り、notify のコードを `os/watch.rs` に移す）→ `logic/debounce.rs` を時刻を外から渡す形で書き、5.4 の表の 7 行をテストにする → config → tokio でつなぐ → プロセス実行 → SQLite
+  - 今のコードの注意点も伝えた：WSL の `/mnt/c/` は Windows 側の変化が届きにくく重い、`let _ = watcher.watch(...)` は失敗を黙って捨てる、`use notify::Result` が std の Result を隠す
+- モジュールのファイルの書き方：`os.rs` ＋ `os/`（新しい書き方）。`mod.rs` は使わない（Roze：「新しい書き方に習ったほうが良いかなぁ」。おすすめどおり）
+  - Roze は「mod は非推奨？」と思っていた → 非推奨なのではなく、`mod.rs` というファイル名が古い書き方、と説明した。main.rs と lib.rs は別のクレートなので、main.rs には `mod` を書かず `foxonar::` で使う、も伝えた
+- Roze：「os っていうフォルダよりは os 名でフォルダを切ったほうが良いのでは？」→ 上は役割で分け、OS で違う所だけ `#[cfg]` で分ける形を説明。Roze は名前を `sys/` に変えた（`src/sys.rs`・`src/sys/watch.rs`）。設計書 9.2 の `os/` を `sys/` に直し、`#[cfg]` の決まりを足した
+  - 分け方（役割が上、OS 名は一番下）は、Roze がはっきり答えたのではなく、`sys/` で役割の形に移したので、そう決まったと読んだ
+- 次の手：Claude はデバウンスのまとめ方（5.4 を「はじめ」と「おわり」の 4 通りに縮めて `merge` 関数）をすすめたが、Roze は「設定ファイルからアプローチしたい」→ `config.rs` から始める。lib.rs はまだ無い（main.rs が `mod sys;` を持っている）
+  - toml クレートは今 1.1.8（TOML 1.1.0 対応）。設計書 9.4・9.6 の前提（0.9.10 から 1.1 を読める）に合う
+- Roze が `src/conf.rs` を書いた（`Config { folder: Vec<TargetFolderConf> }`、テストは通る）。Claude の指摘：ID は必ず書く（`Option` は name に）、`is_recursive: bool` は設計の「見る深さ」（数）とずれる、型名は用語集の英語名 `Folder`、テストが `println!` だけで何も確かめていない、タブとスペースの混在
+- ファイル名（Roze：「config か conf かは私が好きに変えさせてくれ。基本書いたやつがそれになる」）→ 設計書 9.2 の一覧は目安、実際の名前は書いたコードに合わせる、と書いた。一覧の `config.rs` を `conf.rs` に直した
+- 見る深さを今決めた（Roze：「定義しておくか」）：キーは `max_depth`（おすすめは `depth` だった）、0 は制限なし（おすすめは読み込みの失敗だった）。設計書 4.3・9.6、宿題一覧 9 の「残りのキー」から消した
+- すぐ変えた（Roze：「紛らわしいので max_depth は u16 で宣言して Must としました」）：見る深さは必ず書く（書かなければ読み込みの失敗）、0 は制限なしのまま。設計書 4.3・4.x の例・9.6（表・例の TOML に `max_depth = 0`・理由）、図つきのページ（flow.html の部品の一覧、flow.js の札の既定の表示）を直した。型は u16（コードだけの話なので設計書には書いていない）
+  - Roze：65535 で足りる。パスの長さに OS の上限がある（Linux 4096 バイト、Windows 260 / 約 32767 文字）ので届かない
+- Roze が `[[trigger]]` を書いた。ID は newtype（`FolderId`・`JobId`、`#[serde(transparent)]`）。struct を直接持つ案は、serde で読めない・ライフタイム・読み直しで採らなかった（Claude の説明）。中身があるかの確かめは手 5
+  - Claude の指摘：`Crate`（Create の打ち間違い）、フィールド名がそのままキー名になる
+- トリガーから監視フォルダを指すキーを `folder` → `target_folder_id` に変えた（Roze：「folder って言っているからパスを指定するのが普通なのかなぁ」。おすすめは `folder_id` だった）。`jobs` はそのまま（おすすめは `job_ids` だった）。設計書 9.6（表・例・理由）を直した。図つきのページは日本語の札なので直していない
+- 2026-11-02：ジョブは `JonConfig { job }`（jobs.toml 用、Config とは別の struct。`Config` に入れると foxonar.toml に `[[job]]` が要る）。Roze の頼みで、Claude が conf.rs のテストを 9 つ書いた（読める・必ず書く・打ち間違い・glob と regex の両方・TOML 1.1 の `{ }` の中の改行）。すべて緑。toml 1.1.8 で `{ }` の中の改行が読めることを確かめた
+  - コミット（Roze の頼み。ブランチ `feature/conf`、コードと文書で 2 つに分けた。`.vscode/` は入れない）：f4ba8c5（コード）と、そのあとの文書のコミット。push はしていない
+  - 次：手 5 の確かめ（知らないキー＝`deny_unknown_fields`、同じ ID、無い ID を指す、`changes`・`jobs`・`steps` が 1 つ以上）か、ファイルから読む部分
+
 ## まだやっていないこと
 - 2026-10-26 の grill（実装を始めるのに要るもの）は、範囲の木がすべて決まった（Roze：「分かり合えた。黙って前提にしていることも無い」）。コミットして、main に早送りし、GitHub に push した（Roze：「コミットしてプッシュしてくださいな」）。WSL の clone は `git pull` で届く
 - 2026-10-25 の grill の直し（コミット 466cbb2）と、図つきのページの直しを、main に入れて GitHub に push した（Roze の頼み）。WSL の clone は `git pull` で届く
