@@ -9,3 +9,10 @@ __pycache__/
 
 # 昔の議論の記録。もう更新しないので git には入れず、手元にだけ置く
 docs/archive/
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
