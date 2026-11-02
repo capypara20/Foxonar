@@ -29,6 +29,7 @@ Foxonar で作業する AI エージェント（Claude Code、GitHub Copilot、C
 | [.claude/notes.md](.claude/notes.md) | 作業メモ。会話の要点と「まだやっていないこと」。セッションをまたぐ記憶 |
 | [.claude/notes-ai.md](.claude/notes-ai.md) | AI の基盤（この説明書、スキル、エージェント、フック、`scripts/`）の作業メモ。設計の話（notes.md）とは分けて書く |
 | [scripts/doc_check.py](scripts/doc_check.py) | 文書の突き合わせスクリプト（下の「確かめ方」） |
+| [.github/ISSUE_TEMPLATE/task.md](.github/ISSUE_TEMPLATE/task.md) | Issue のテンプレート（下の「Issue とブランチ」） |
 | `assets/` | プログラムが使う素材（アイコンなど） |
 
 ## 決まり（いちばん大事）
@@ -59,6 +60,14 @@ python scripts/doc_check.py --todo   # 宿題一覧の「決めること」の�
 
 - タイトル：50 文字以内 → 空行 → 本文：1 行 72 桁以内（全角は 2 桁）で改行。日本語。
 - 形式の確認：`python .claude/skills/commit/check_msg.py < メッセージのファイル`
+
+## Issue とブランチ
+
+- 実装の作業は、1 Issue = 1 ブランチ = 1 PR で進める。Issue は日本語で、テンプレート（`.github/ISSUE_TEMPLATE/task.md`）の 5 つの見出し（作るもの・設計書・終わりの条件・先に要るもの・決まっていないこと）で書く。
+- ブランチの名前は `種類/番号-短い英語`（例：`feat/12-debounce`）。種類は `feat`（作る）、`fix`（直す）、`docs`（文書）など。
+- PR の本文に `Closes #番号` と書き、マージで Issue を閉じる。
+- 宿題一覧の項目が決まらないと進められない Issue には、「設計待ち」のラベルを付け、決まるまで手を付けない。決まったら、設計書の節を Issue に書き、ラベルを外す。
+- Issue を GitHub に立てる・直すのは、持ち主が頼んだときだけ（公開のリポジトリなので）。
 
 ## コードを書くとき（実装が始まってから）
 
