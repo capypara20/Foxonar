@@ -1,3 +1,4 @@
+pub mod loader;
 use serde::Deserialize;
 
 /// 監視ディレクトリ基本設定構造体(foxonar.toml)
