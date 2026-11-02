@@ -7,23 +7,21 @@ use foxonar::{
 };
 
 pub fn main() -> Result<(), Box<dyn Error>> {
-    // 本来は設定ファイルからパスを取得する
-    let targets_path_str = vec![
-        "/home/capypara20/developer/foxonar",
-        "/home/capypara20/dotfiles",
-        "/mnt/c/",
-    ];
-
-    // 配列から取り出す
-    // watcher_core(targets_path_str)?;
-
     // 設定ファイル取得
     let s = "/home/capypara20/developer/foxonar/tests/data/foxonar.toml";
-    let base_conf_path = Path::new(s);
-    let base_conf = BaseConf::load(base_conf_path)?;
-    println!("{:#?}", base_conf);
-    let trig_conf_path = Path::new(s);
-    let trig_conf = JobTriggerConf::load(trig_conf_path)?;
-    println!("{:#?}", trig_conf);
+    let s2 = "/home/capypara20/developer/foxonar/tests/data/trigger.toml";
+
+	// 監視ディレクトリ設定
+    let base_conf = BaseConf::load(Path::new(s))?;
+    eprintln!("{:#?}", base_conf);
+    let target_path: Vec<&str> = base_conf.folder.iter().map(|f| f.path.as_str()).collect();
+	
+	// トリガー設定
+    let trig_conf = JobTriggerConf::load(Path::new(s2))?;
+    eprintln!("{:#?}", trig_conf);
+
+	// 監視開始
+    watcher_core(target_path)?;
+
     Ok(())
 }

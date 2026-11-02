@@ -1,10 +1,4 @@
 [[folder]]
-id = "inbox"
-name = "受信箱"
-path = "/home/roze/in"
-max_depth = 2
-
-[[folder]]
 id = "photos"
-path = "/home/roze/photos"
+path = "/home/capypara20"
 max_depth = 0
