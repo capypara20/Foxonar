@@ -884,9 +884,18 @@
 - コミット（Roze の頼み。ブランチ `feature/conf`、コードと文書で 2 つ）：a8e83a9（コード）と、そのあとの文書のコミット。push はしていない
 - Roze：「次は設定定義のインスタンス部分を定義して、メインから呼び出してみようかな」→ Claude も賛成（2026-11-02 の案と同じ）
 
+### ローダーのレビューと、confy は使わない（Roze が決めた）
+- Roze がローダーを `src/conf/loader.rs` に書き始めた（`conf.rs` に `pub mod loader;`。設計書 9.2 の形）。トレイト `conf_loader` に中身つきの `load(&self){}` を書き、`BaseConf` と `JobTriggerConf` に空の `impl`。main は `BaseConf::default()` を作って `load(&base)` を呼ぶ
+- Claude のレビュー（形はそのまま使える。直すのは 3 つ）：`&self` を取らず `Self` を返す（作る関数は self を取らない。`String::from`、`FromStr` と同じ）、戻り値を `Result<Self, Box<dyn Error>>`、トレイトに `: DeserializeOwned`。ほかに、名前は `ConfLoader`（警告）、`watcher_core` は止まらないので読み込みを先に、`Default` は消せる、2 つまとめて読む関数（4.2 の ID の確かめもここに）、エラーにファイル名（`map_err`）、タブの混在
+  - 試し用のクレート（scratchpad。リポジトリの外）で、この形がコンパイルできることと、toml のエラーにファイル名が出ないことを確かめた
+  - トレイトを使わず、ジェネリクスの関数 `read_toml::<T>` にする書き方も伝えた。おすすめはトレイトのまま
+- confy（Roze：「これ使うのどうよ」）は使わない（Roze：「自分で書く」。おすすめどおり）。設計書 9.4 の理由に、採らなかった案と確かめたことを書いた
+  - 理由：ファイルが無いと空の設定を書き出して起動する（4.2 とぶつかる。宿題一覧 4.2 のまだ決めていないことにも勝手に答える）、エラーが「Bad TOML data」だけ、`Serialize`・`Default` が要る、toml が 2 つの版で入る、書き出したファイルにコメントが入らない
+  - Web UI から保存するとき（4.1）は `toml_edit`（コメントと並び順を残せる）を検討するとよい、と伝えた（案）
+
 ## まだやっていないこと
 - 設定ファイルの分け方の変更（2026-11-02）は、コード（a8e83a9）と文書をブランチ `feature/conf` にコミットした。push はしていない
-- 次の一手：`conf::load` を作って main につなぐ（Roze が書く。2026-11-02 に Roze が選んだ）→ 確かめ（`deny_unknown_fields`・同じ ID・無い ID を指す・1 つ以上）を load に足す → デバウンス
+- 次の一手：ローダー（`src/conf/loader.rs`。Roze が書きかけ、まだコミットしていない）を仕上げて main から呼ぶ。2026-11-02 のレビューの直し（`&self` を取らず `Self` を返す、`Result`、`DeserializeOwned`、2 つまとめて読む関数、エラーにファイル名）→ 確かめ（`deny_unknown_fields`・同じ ID・無い ID を指す・1 つ以上）を足す → デバウンス。confy は使わない
 - 2026-10-26 の grill（実装を始めるのに要るもの）は、範囲の木がすべて決まった（Roze：「分かり合えた。黙って前提にしていることも無い」）。コミットして、main に早送りし、GitHub に push した（Roze：「コミットしてプッシュしてくださいな」）。WSL の clone は `git pull` で届く
 - 2026-10-25 の grill の直し（コミット 466cbb2）と、図つきのページの直しを、main に入れて GitHub に push した（Roze の頼み）。WSL の clone は `git pull` で届く
 - 区切りの突き合わせ（doc-check のエージェント 2 人）は、2026-10-25 の直しにはまだしていない（スクリプトの突き合わせはエラー 0）
