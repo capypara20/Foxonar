@@ -1,0 +1,14 @@
+[[trigger]]
+id = "photos"
+name = "写真が来たら"
+target_folder_id = "inbox"    # foxonar.toml の監視フォルダ
+changes = ["create", "rename"]
+filter = { glob = "*.jpg" }
+jobs = ["thumbnail"]          # このファイルの下のジョブ
+
+[[job]]
+id = "thumbnail"
+name = "サムネイル"
+steps = [
+	{ exec = "ls" }
+]

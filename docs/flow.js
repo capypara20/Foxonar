@@ -172,7 +172,7 @@ const CFG_KIND = { folder: '監視フォルダ', trigger: 'トリガー', job: '
 function drawCfg(c) {
   const cards = [];
   for (const f of c.folders || []) {
-    cards.push(cfgCard('folder', f.id, '', [['パス', '`' + f.path + '`'], ['見る深さ', f.depth || '書かない（制限なし）'], ...(f.more || [])]));
+    cards.push(cfgCard('folder', f.id, '', [['パス', '`' + f.path + '`'], ['見る深さ', f.depth || '0（制限なし）'], ...(f.more || [])]));
   }
   for (const t of c.triggers || []) {
     cards.push(cfgCard('trigger', t.id, t.name, [
